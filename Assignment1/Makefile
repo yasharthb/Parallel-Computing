@@ -1,4 +1,4 @@
 all:
-	mpicc src.c -o halo
+	mpicc src.c -o halo -lm
 clean:
 	rm halo
