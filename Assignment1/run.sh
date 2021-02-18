@@ -1,19 +1,20 @@
 # Job script to run the complete assignment
-
+  
 #!bin/bash
 
 # Compile the source code
 make clean
 make
+bash hostfile.sh 8
 
-for (( N=16; N<=1024; N=N*2 ))
+for P in 16 36 49 64
 do
-    for P in 16 36 49 64
+    for (( N=16; N<=1024; N=N*2 ))
         do
             for execution in {1..5}
-                do 
-                    mpirun -np $P ./halo $N $P 1
+                do
+                    echo P:$P N:$N Execution:$execution         
+                    mpirun -np $P -f hostfile ./halo $N 50 1
                 done
         done
 done
-
