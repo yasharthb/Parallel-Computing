@@ -8,7 +8,7 @@
 #include "mpi.h"
 
 // Part-1: Uses multiple sends and receives
-void multiple_send_receive(int N, int num_of_steps){
+void multiple_send_receive(int N, int num_of_steps, int option){
 
     int  myrank, size;
     int  proc_row, proc_col; // Process coordinates in square decomposition
@@ -309,14 +309,18 @@ void multiple_send_receive(int N, int num_of_steps){
                 new[r][c] = (old[r-1][c] + old[r+1][c] + old[r][c-1] + old[r][c+1])/4.0;
         }
 
-        memcpy (old, new, (N+2)*(N+2)*sizeof(double));
+        //memcpy (old, new, (N+2)*(N+2)*sizeof(double)); //TODO: Replace with loop? Free throws error on continuous runs
+        for (int i=0; i<N+2; i++)
+            for (int j=0; j<N+2; j++)
+                old[i][j] = new[i][j];
+        free(new[0]);
         free(new);
     }
 
     etime = MPI_Wtime() - start_time;
     MPI_Reduce (&etime, &max_time, 1, MPI_DOUBLE, MPI_MAX, 0, MPI_COMM_WORLD);
 
-    if (myrank == 0) printf ("P:%d N:%d Max_time:%lf\n", size, N, max_time);
+    if (myrank == 0) printf ("Option:%d P:%d N:%d Max_time:%lf\n", option, size, N, max_time);
 
     MPI_Finalize();
 
@@ -331,7 +335,7 @@ void multiple_send_receive(int N, int num_of_steps){
 }
 
 // Part-2: Uses pack/unpack and send/receives
-void pack_send_unpack_receive(int N, int num_of_steps){
+void pack_send_unpack_receive(int N, int num_of_steps, int option){
 
     int  myrank, size, pack_size;
     int  proc_row, proc_col; // Process coordinates in square decomposition
@@ -657,14 +661,19 @@ void pack_send_unpack_receive(int N, int num_of_steps){
                 new[r][c] = (old[r-1][c] + old[r+1][c] + old[r][c-1] + old[r][c+1])/4.0;
         }
 
-        memcpy (old, new, (N+2)*(N+2)*sizeof(double));
+        //memcpy (old, new, (N+2)*(N+2)*sizeof(double));
+        for (int i=0; i<N+2; i++)
+            for (int j=0; j<N+2; j++)
+                old[i][j] = new[i][j];
+
+        free(new[0]);
         free(new);
     }
 
     etime = MPI_Wtime() - start_time;
     MPI_Reduce (&etime, &max_time, 1, MPI_DOUBLE, MPI_MAX, 0, MPI_COMM_WORLD);
 
-    if (myrank == 0) printf ("P:%d N:%d Max_time:%lf\n", size, N, max_time);
+    if (myrank == 0) printf ("Option:%d P:%d N:%d Max_time:%lf\n", option, size, N, max_time);
 
     MPI_Finalize();
 
@@ -679,7 +688,7 @@ void pack_send_unpack_receive(int N, int num_of_steps){
 }
 
 // Part-3; Uses derived datatypes
-void derived_datatype_send_receive(int N, int num_of_steps){
+void derived_datatype_send_receive(int N, int num_of_steps, int option){
     int  myrank, size;
     int  proc_row, proc_col; // Process coordinates in square decomposition
     int  topo_size; // Gives side length of square decomposition
@@ -979,14 +988,18 @@ void derived_datatype_send_receive(int N, int num_of_steps){
                 new[r][c] = (old[r-1][c] + old[r+1][c] + old[r][c-1] + old[r][c+1])/4.0;
         }
 
-        memcpy (old, new, (N+2)*(N+2)*sizeof(double));
+        //memcpy (old, new, (N+2)*(N+2)*sizeof(double));
+        for (int i=0; i<N+2; i++)
+            for (int j=0; j<N+2; j++)
+                old[i][j] = new[i][j];
+        free(new[0]);
         free(new);
     }
 
     etime = MPI_Wtime() - start_time;
     MPI_Reduce (&etime, &max_time, 1, MPI_DOUBLE, MPI_MAX, 0, MPI_COMM_WORLD);
 
-    if (myrank == 0) printf ("P:%d N:%d Max_time:%lf\n", size, N, max_time);
+    if (myrank == 0) printf ("Option:%d P:%d N:%d Max_time:%lf\n", option, size, N, max_time);
 
     MPI_Finalize();
 
@@ -1009,15 +1022,15 @@ int main( int argc, char *argv[])
     int option = atoi (argv[3]); // part to run
 
     if (option == 1)
-        multiple_send_receive(N, num_of_steps);
+        multiple_send_receive(N, num_of_steps, option);
     else if (option == 2)
-        pack_send_unpack_receive(N,num_of_steps);
+        pack_send_unpack_receive(N,num_of_steps, option);
     else if (option == 3)
-        derived_datatype_send_receive(N,num_of_steps);
+        derived_datatype_send_receive(N,num_of_steps, option);
     else{
-        multiple_send_receive(N, num_of_steps);
-        pack_send_unpack_receive(N,num_of_steps);
-        derived_datatype_send_receive(N,num_of_steps);
+        multiple_send_receive(N, num_of_steps, option);
+        pack_send_unpack_receive(N,num_of_steps, option);
+        derived_datatype_send_receive(N,num_of_steps, option);
     }
 
     return 0;

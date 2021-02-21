@@ -1,20 +1,28 @@
-# Job script to run the complete assignment
-  
+# Job script to run the complete assignment 
 #!bin/bash
 
 # Compile the source code
 make clean
 make
-bash hostfile.sh 8
+#bash hostfile.sh 8 #TODO: Modify it according to number of procs needed and move it inside the loop
 
 for P in 16 36 49 64
 do
-    for (( N=16; N<=1024; N=N*2 ))
+    data_file="data${P}.txt"
+    if [ -e "$data_file" ]
+    then
+        rm -f $data_file
+    fi
+    echo ""
+    echo "#Processes:$P"
+    for (( N=16; N<=32; N=N*2 ))
         do
-            for execution in {1..5}
+            for opt in {1..3}
+            do
+                for execution in {1..5}
                 do
-                    echo P:$P N:$N Execution:$execution         
-                    mpirun -np $P -f hostfile ./halo $N 50 1
+                    mpirun -np $P ./halo $N 50 $opt | tee -a $data_file
                 done
+            done
         done
 done
