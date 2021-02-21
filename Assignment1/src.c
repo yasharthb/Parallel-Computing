@@ -11,8 +11,7 @@ void multiple_send_receive(int N, int num_of_steps){
     
     int  myrank, size;
     int  proc_row, proc_col; // Process coordinates in square decomposition
-    int  topo_size; // Gives side length of square decomposition
-    
+    int  topo_size; // Gives side length of square decomposition    
     double start_time, time, max_time;
     
     double **old = (double **)malloc((N+2)* sizeof(double *)); // Data matrices--outer dim are recv buffers
@@ -139,7 +138,7 @@ void multiple_send_receive(int N, int num_of_steps){
 // Part-2: Uses pack/unpack and send/receives
 void pack_send_unpack_receive(int N, int num_of_steps){
 
-    int  myrank, size;
+    int  myrank, size, pack_size;
     int  proc_row, proc_col; // Process coordinates in square decomposition
     int  topo_size; // Gives side length of square decomposition
 
@@ -152,6 +151,9 @@ void pack_send_unpack_receive(int N, int num_of_steps){
     MPI_Init(NULL, NULL);
     MPI_Comm_rank( MPI_COMM_WORLD, &myrank );
     MPI_Comm_size( MPI_COMM_WORLD, &size );
+    MPI_Pack_size(10000, MPI_DOUBLE, MPI_COMM_WORLD, &pack_size);
+
+//    printf("My Rank is %d, Max Pack size is %d\n",myrank,pack_size);
 
     topo_size = sqrt((double)size);
     proc_row = myrank/topo_size;
@@ -193,13 +195,13 @@ void pack_send_unpack_receive(int N, int num_of_steps){
         double lrecv[N], rrecv[N], trecv[N], brecv[N];
         int nreq=0;
         // Receive from left
-        MPI_Irecv(lrecv, N, MPI_PACKED, left_rank, MPI_ANY_TAG, MPI_COMM_WORLD, &request[nreq++]);
+        MPI_Irecv(lrecv, sizeof(double)*N, MPI_PACKED, left_rank, MPI_ANY_TAG, MPI_COMM_WORLD, &request[nreq++]);
         // Receive from right
-        MPI_Irecv(rrecv, N, MPI_PACKED, right_rank, MPI_ANY_TAG, MPI_COMM_WORLD, &request[nreq++]);
+        MPI_Irecv(rrecv, sizeof(double)*N, MPI_PACKED, right_rank, MPI_ANY_TAG, MPI_COMM_WORLD, &request[nreq++]);
         // Receive from top
-        MPI_Irecv(trecv, N, MPI_PACKED, top_rank, MPI_ANY_TAG, MPI_COMM_WORLD, &request[nreq++]);
+        MPI_Irecv(trecv, sizeof(double)*N, MPI_PACKED, top_rank, MPI_ANY_TAG, MPI_COMM_WORLD, &request[nreq++]);
         // Receive from bottom
-        MPI_Irecv(brecv, N, MPI_PACKED, bottom_rank, MPI_ANY_TAG, MPI_COMM_WORLD, &request[nreq++]);
+        MPI_Irecv(brecv, sizeof(double)*N, MPI_PACKED, bottom_rank, MPI_ANY_TAG, MPI_COMM_WORLD, &request[nreq++]);
 
         // Send elements
         double lbuf[N], rbuf[N], tbuf[N], bbuf[N];
@@ -229,9 +231,13 @@ void pack_send_unpack_receive(int N, int num_of_steps){
         //for (int r=2; r<=N-1; r++)
         //   for (int c=2; c<=N-1; c++)
         //        new[r][c] = (old[r-1][c] + old[r+1][c] + old[r][c-1] + old[r][c+1])/4;
-        
+
+	printf("Rank: %d %d %d %d %d Nreq: %d\n",myrank,lpos,rpos,tpos,bpos,nreq);
         MPI_Waitall(nreq, request, status);
-        //for (int i=0; i<nreq; i++)
+/*	for(int i=0;i<nreq;i++)
+	  printf("MPI Error status %d\n",status[i].MPI_ERROR);
+*/  
+      //for (int i=0; i<nreq; i++)
         //   printf("%d\n", status[i].MPI_ERROR); 
         //lpos=0, rpos=0, tpos=0, bpos=0; //TODO: It is okay to use these variables now?
         
@@ -259,7 +265,7 @@ void pack_send_unpack_receive(int N, int num_of_steps){
     time = MPI_Wtime() - start_time;
 //    MPI_Reduce (&time, &max_time, 1, MPI_DOUBLE, MPI_MAX, 0, MPI_COMM_WORLD);
 
-//    if (myrank == 0) printf ("Max time = %lf\n", max_time);
+  // if (myrank == 0) printf ("Max time = %lf\n", max_time);
 
     MPI_Finalize();
 
@@ -274,7 +280,346 @@ void pack_send_unpack_receive(int N, int num_of_steps){
 
 // Part-3; Uses derived datatypes
 void derived_datatype_send_receive(int N, int num_of_steps){
+    int  myrank, size;
+    int  proc_row, proc_col; // Process coordinates in square decomposition
+    int  topo_size; // Gives side length of square decomposition
+    
+    double start_time, time, max_time;
+    
+   double **old = malloc((N+2)*sizeof(double *)); // Data matrices--outer dim are recv buffers
+   old[0] = malloc((N+2)*(N+2)*sizeof(double));
+    for (int i=1; i<(N+2);i++)
+       old[i] = old[i-1]+(N+2);
+/*
+(double*) malloc ((N+2)* sizeof(double));
+A[0] = malloc(ROWS * COLS * sizeof(int));
+for(int i = 1; i < ROWS; i++) 
+   A[i] = A[i-1] + COLS;
+*/
+//    double old[N+2][N+2];
+    MPI_Init(NULL, NULL);
+    MPI_Comm_rank( MPI_COMM_WORLD, &myrank );
+    MPI_Comm_size( MPI_COMM_WORLD, &size );
+    
+    topo_size = sqrt((double)size);
+    proc_row = myrank/topo_size;
+    proc_col = myrank%topo_size;
 
+    MPI_Datatype rowVector,columnVector, rcolumnVector;
+    MPI_Type_vector(N, 1, 1, MPI_DOUBLE, &rowVector);
+    MPI_Type_commit(&rowVector);
+
+
+//    int array_of_sizes[]= {N+2,N+2};
+//    int array_of_subsizes[]= {N,1};
+//    int array_of_starts_left[]={1,1};
+//    int array_of_starts_right[]={1,N};
+
+//    MPI_Type_create_subarray(2,array_of_sizes,array_of_subsizes,array_of_starts_left, MPI_ORDER_C,MPI_DOUBLE, &lcolumnVector);
+
+    MPI_Type_vector(N, 1, N+2, MPI_DOUBLE, &columnVector);
+    MPI_Type_commit(&columnVector);
+//    MPI_Type_commit(&lcolumnVector);
+  
+//   MPI_Type_create_subarray(2,array_of_sizes,array_of_subsizes,array_of_starts_right, MPI_ORDER_C,MPI_DOUBLE, &rcolumnVector);
+//   MPI_Type_commit(&rcolumnVector);
+
+    // Neighboring process ranks
+    int left_rank = myrank-1, right_rank = myrank+1;
+    int top_rank = myrank-topo_size, bottom_rank = myrank+topo_size;
+ 
+    if (proc_row == 0)
+        top_rank = MPI_PROC_NULL;
+    else if (proc_row == topo_size-1)
+        bottom_rank = MPI_PROC_NULL;
+    
+    if (proc_col == 0)
+        left_rank = MPI_PROC_NULL;
+    else if (proc_col == topo_size-1)
+        right_rank = MPI_PROC_NULL;
+
+//    printf("Rank:%d, %d -- (%d,%d)\n", myrank, topo_size, proc_row, proc_col);
+//    printf("Rank:%d Left:%d Right:%d Top:%d Bottom:%d\n", myrank, left_rank, right_rank, top_rank, bottom_rank);    
+	int counter =1;
+    for (int i=1; i<=N; i++)
+        for (int j=1; j<=N; j++)
+            old[i][j] =counter++; //myrank+i+j-2; // TODO: Random initialization
+    
+  //  for(int i=0;i<(N+2)*(N+2);i++)
+//	printf("%f ",*(*old+i));
+//	printf("\n");
+//	printf("Rank: %d %f\n",myrank,*(&old[1][1]+N+2));
+
+    start_time = MPI_Wtime();
+
+    for (int step=0; step<num_of_steps; step++){
+        
+        double **new = malloc((N+2)*sizeof(double *)); // Data matrices--outer dim are recv buffers
+        new[0] = malloc((N+2)*(N+2)*sizeof(double));
+        for (int i=1; i<(N+2);i++)
+          new[i] = new[i-1]+(N+2);
+
+
+        MPI_Status status[8];
+        MPI_Request request[8];
+
+      //  double lbuf[N], rbuf[N], tbuf[N], bbuf[N];
+        int nreq=0;
+
+        // Receive elements
+        // Receive from left
+        MPI_Irecv(&old[1][0], 1, columnVector, left_rank, MPI_ANY_TAG, MPI_COMM_WORLD, &request[nreq++]);
+        // Receive from right
+        MPI_Irecv(&old[1][N+1], 1, columnVector, right_rank, MPI_ANY_TAG, MPI_COMM_WORLD, &request[nreq++]);
+        // Receive from top
+        MPI_Irecv(&old[0][1], 1, rowVector, top_rank, MPI_ANY_TAG, MPI_COMM_WORLD, &request[nreq++]);
+        // Receive from bottom
+        MPI_Irecv(&old[N+1][1], 1, rowVector, bottom_rank, MPI_ANY_TAG, MPI_COMM_WORLD, &request[nreq++]);
+        
+        // Send elements
+        // Send to left
+        MPI_Isend(&old[1][1], 1, columnVector, left_rank, step, MPI_COMM_WORLD, &request[nreq++]);
+        // Send to right
+        MPI_Isend(&old[1][N], 1, columnVector, right_rank, step, MPI_COMM_WORLD, &request[nreq++]);
+        // Send to top
+        MPI_Isend(&old[1][1], 1, rowVector, top_rank, step, MPI_COMM_WORLD, &request[nreq++]);
+        // Send to bottom
+        MPI_Isend(&old[N][1], 1, rowVector, bottom_rank, step, MPI_COMM_WORLD, &request[nreq++]);
+/*
+        // Stencil computation for non-halo region
+       for (int r=2; r<=N-1; r++)
+           for (int c=2; c<=N-1; c++)
+                new[r][c] = (old[r-1][c] + old[r+1][c] + old[r][c-1] + old[r][c+1])/4;
+  */
+        MPI_Waitall(nreq, request, status); 
+	for(int i=1;i<=N;i++)
+	printf("Rank %d, Left Buff[%d] %f\n", myrank,i-1, old[i][0]);
+
+        for(int i=1;i<=N;i++)
+        printf("Rank %d, Right Buff[%d] %f\n", myrank,i-1, old[i][N+1]);
+
+        for(int i=1;i<=N;i++)
+        printf("Rank %d, Top Buff[%d] %f\n", myrank,i-1, old[0][i]);
+
+	for(int i=1;i<=N;i++)
+        printf("Rank %d, Bottom Buff[%d] %f\n", myrank,i-1, old[N+1][i]);
+
+       // Stencil computation for non-halo region
+       for (int r=2; r<=N-1; r++)
+           for (int c=2; c<=N-1; c++)
+                new[r][c] = (old[r-1][c] + old[r+1][c] + old[r][c-1] + old[r][c+1])/4;
+
+	//Stencil computation for halo regio (separate computation for corner processes)
+        if(proc_row == 0 || proc_row == N-1 || proc_col == 0 || proc_col == N-1){
+
+            // Top Left Process
+            if(proc_row ==0 && proc_col == 0){
+                int r=1; // First row
+                for (int c=1; c<=N; c++){
+                    if (c==1)
+                        new[r][c] = (old[r+1][c] + old[r][c+1])/2.0;
+                    else
+                        new[r][c] = (old[r+1][c] + old[r][c+1] + old[r][c-1])/3.0;
+                }
+                r=N; //Last row
+                for (int c=1; c<=N; c++){
+                    if (c==1)
+                        new[r][c] = (old[r+1][c] + old[r][c+1] + old[r-1][c])/3.0;
+                    else
+                        new[r][c] = (old[r-1][c] + old[r+1][c] + old[r][c-1] + old[r][c+1])/4.0;
+                }
+                int c=1; // First column
+                for (int r=2; r<N; r++)
+                    new[r][c] = (old[r-1][c] + old[r][c+1] + old[r+1][c])/3.0;
+
+                c=N; //Last column
+                for (int r=2; r<N; r++)
+                        new[r][c] = (old[r-1][c] + old[r+1][c] + old[r][c-1] + old[r][c+1])/4.0;
+            }
+
+            //Bottom Left Process
+            if(proc_row ==N-1 && proc_col == 0){
+                int r=N; // Last row
+                for (int c=1; c<=N; c++){
+                    if (c==1)
+                        new[r][c] = (old[r-1][c] + old[r][c+1])/2.0;
+                    else
+                        new[r][c] = (old[r-1][c] + old[r][c+1] + old[r][c-1])/3.0;
+                }
+                r=1; //First row
+                for (int c=1; c<=N; c++){
+                    if (c==1)
+                        new[r][c] = (old[r+1][c] + old[r][c+1] + old[r-1][c])/3.0;
+                    else
+                        new[r][c] = (old[r-1][c] + old[r+1][c] + old[r][c-1] + old[r][c+1])/4.0;
+                }
+                int c=1; // First column
+                for (int r=2; r<N; r++)
+                    new[r][c] = (old[r-1][c] + old[r][c+1] + old[r+1][c])/3.0;
+
+                c=N; //Last column
+                for (int r=2; r<N; r++)
+                        new[r][c] = (old[r-1][c] + old[r+1][c] + old[r][c-1] + old[r][c+1])/4.0;
+            }
+
+            // Bottom Right Process
+            if(proc_row ==0 && proc_col == N-1){
+                int r=N; // Last row
+                for (int c=1; c<=N; c++){
+                    if (c==N)
+                        new[r][c] = (old[r-1][c] + old[r][c-1])/2.0;
+                    else
+                        new[r][c] = (old[r-1][c] + old[r][c-1] + old[r][c+1])/3.0;
+                }
+                r=1; //First row
+                for (int c=1; c<=N; c++){
+                    if (c==N)
+                        new[r][c] = (old[r+1][c] + old[r][c-1] + old[r-1][c])/3.0;
+                    else
+                        new[r][c] = (old[r-1][c] + old[r+1][c] + old[r][c-1] + old[r][c+1])/4.0;
+                }
+                int c=N; // Last column
+                for (int r=2; r<N; r++)
+                    new[r][c] = (old[r-1][c] + old[r][c-1] + old[r+1][c])/3.0;
+
+                c=1; //First column
+                for (int r=2; r<N; r++)
+                        new[r][c] = (old[r-1][c] + old[r+1][c] + old[r][c-1] + old[r][c+1])/4.0;
+            }
+
+            //Top Right Process
+            if(proc_row == 0 && proc_col == N-1){
+                int r=1; // First row
+                for (int c=1; c<=N; c++){
+                    if (c==N)
+                        new[r][c] = (old[r+1][c] + old[r][c-1])/2.0;
+                    else
+                        new[r][c] = (old[r+1][c] + old[r][c+1] + old[r][c-1])/3.0;
+                }
+                r=N; //Last row
+                for (int c=1; c<=N; c++){
+                    if (c==N)
+                        new[r][c] = (old[r+1][c] + old[r][c-1] + old[r-1][c])/3.0;
+                    else
+                        new[r][c] = (old[r-1][c] + old[r+1][c] + old[r][c-1] + old[r][c+1])/4.0;
+                }
+                int c=N; // Last Column
+                for (int r=2; r<N; r++)
+                    new[r][c] = (old[r-1][c] + old[r][c-1] + old[r+1][c])/3.0;
+
+                c=1; //First column
+                for (int r=2; r<N; r++)
+                        new[r][c] = (old[r-1][c] + old[r+1][c] + old[r][c-1] + old[r][c+1])/4.0;
+            }
+
+            // Top Mid Process
+            if(proc_row ==0 && proc_col != 0 && proc_col !=N-1){
+                int r=1; // First row
+                for (int c=1; c<=N; c++)
+                        new[r][c] = (old[r+1][c] + old[r][c+1] + old[r][c-1])/3.0;
+
+                r=N; //Last row
+                for (int c=1; c<=N; c++)
+                        new[r][c] = (old[r-1][c] + old[r+1][c] + old[r][c-1] + old[r][c+1])/4.0;
+
+                int c=1; // First column
+                for (int r=2; r<N; r++)
+                    new[r][c] = (old[r-1][c] + old[r+1][c] + old[r][c-1] + old[r][c+1])/4.0;
+
+                c=N; //Last column
+                for (int r=2; r<N; r++)
+                        new[r][c] = (old[r-1][c] + old[r+1][c] + old[r][c-1] + old[r][c+1])/4.0;
+            }
+
+            //Bottom Mid Process
+            if(proc_row ==N-1 && proc_col != 0 && proc_col !=N-1){
+                
+                int r=N; // Last row
+                for (int c=1; c<=N; c++)
+                        new[r][c] = (old[r-1][c] + old[r][c+1] + old[r][c-1])/3.0;
+
+                r=1; //First row
+                for (int c=1; c<=N; c++)
+                        new[r][c] = (old[r-1][c] + old[r+1][c] + old[r][c-1] + old[r][c+1])/4.0;
+                
+                int c=1; // First column
+                for (int r=2; r<N; r++)
+                    new[r][c] = (old[r-1][c] + old[r+1][c] + old[r][c-1] + old[r][c+1])/4.0;
+
+                c=N; //Last column
+                for (int r=2; r<N; r++)
+                        new[r][c] = (old[r-1][c] + old[r+1][c] + old[r][c-1] + old[r][c+1])/4.0;
+            }
+
+            //Left Mid Process
+            if(proc_row !=N-1 && proc_row!=0 && proc_col == 0){
+                int r=N; // Last row
+                for (int c=1; c<=N; c++){
+                    if (c==1)
+                        new[r][c] = (old[r-1][c] + old[r][c+1] + old[r][c-1])/3.0;
+                    else
+                        new[r][c] = (old[r-1][c] + old[r+1][c] + old[r][c-1] + old[r][c+1])/4.0;
+                }
+                r=1; //First row
+                for (int c=1; c<=N; c++){
+                    if (c==1)
+                        new[r][c] = (old[r+1][c] + old[r][c+1] + old[r-1][c])/3.0;
+                    else
+                        new[r][c] = (old[r-1][c] + old[r+1][c] + old[r][c-1] + old[r][c+1])/4.0;
+                }
+                int c=1; // First column
+                for (int r=2; r<N; r++)
+                    new[r][c] = (old[r-1][c] + old[r][c+1] + old[r+1][c])/3.0;
+
+                c=N; //Last column
+                for (int r=2; r<N; r++)
+                        new[r][c] = (old[r-1][c] + old[r+1][c] + old[r][c-1] + old[r][c+1])/4.0;
+            }
+
+            //Right Mid Process
+            if(proc_row !=N-1 && proc_row!=0 && proc_col == N-1){
+                int r=1; // First row
+                for (int c=1; c<=N; c++){
+                    if (c==N)
+                        new[r][c] = (old[r+1][c] + old[r][c+1] + old[r][c-1])/3.0;
+                    else
+                        new[r][c] = (old[r-1][c] + old[r+1][c] + old[r][c-1] + old[r][c+1])/4.0;
+                }
+                r=N; //Last row
+                for (int c=1; c<=N; c++){
+                    if (c==N)
+                        new[r][c] = (old[r+1][c] + old[r][c-1] + old[r-1][c])/3.0;
+                    else
+                        new[r][c] = (old[r-1][c] + old[r+1][c] + old[r][c-1] + old[r][c+1])/4.0;
+                }
+                int c=N; // Last Column
+                for (int r=2; r<N; r++)
+                    new[r][c] = (old[r-1][c] + old[r][c-1] + old[r+1][c])/3.0;
+
+                c=1; //First column
+                for (int r=2; r<N; r++)
+                        new[r][c] = (old[r-1][c] + old[r+1][c] + old[r][c-1] + old[r][c+1])/4.0;
+            }
+        }
+        memcpy (old, new, (N+2)*(N+2)*sizeof(double));
+        free(new);
+	}
+
+ time = MPI_Wtime() - start_time;
+    MPI_Reduce (&time, &max_time, 1, MPI_DOUBLE, MPI_MAX, 0, MPI_COMM_WORLD);
+
+    if (myrank == 0) printf ("Max time = %lf\n", max_time);
+
+    MPI_Finalize();
+
+    /*printf("Process:%d\n", myrank);
+    for (int i=0; i<N+2; i++){
+        for (int j=0; j<N+2; j++)
+            printf("%lf ", old[i][j]);
+        printf("\n");    
+    }*/
+    free(old[0]);
+    free(old);
 }
 
 
