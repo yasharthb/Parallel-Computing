@@ -15,7 +15,7 @@ do
     fi
     echo ""
     echo "#Processes:$P"
-    for (( N=16; N<=32; N=N*2 ))
+    for (( N=16; N<=1024; N=N*2 ))
         do
             for opt in {1..3}
             do
