@@ -4,10 +4,10 @@
 # Compile the source code
 make clean
 make
-bash hostfile.sh 8 #TODO: Modify it according to number of procs needed and move it inside the loop
 
 for P in 16 36 49 64
 do
+    bash hostfile.sh 8 $(((P+7)/8))
     data_file="data${P}.txt"
     if [ -e "$data_file" ]
     then
@@ -21,7 +21,7 @@ do
             do
                 for execution in {1..5}
                 do
-                    mpirun -np $P -f hostfile ./halo $N 50 $opt | tee -a $data_file
+                    mpirun -np $P -f hostfile ./halo $N 1 $opt | tee -a $data_file
                 done
             done
         done
