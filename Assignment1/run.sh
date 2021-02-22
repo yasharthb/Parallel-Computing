@@ -21,7 +21,7 @@ do
             do
                 for execution in {1..5}
                 do
-                    mpirun -np $P -f hostfile ./halo $N 1 $opt | tee -a $data_file
+                    mpirun -np $P -f hostfile ./halo $N 50 $opt | tee -a $data_file
                 done
             done
         done
