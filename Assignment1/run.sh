@@ -26,3 +26,5 @@ do
             done
         done
 done
+echo "All configurations done! Generating plots"
+python3 plot.py
