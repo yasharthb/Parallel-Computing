@@ -36,13 +36,13 @@ for p in proc:
     #plt.figure(figsize=(12,8), dpi=80)
     plt.figure()
     plt.plot(range(1,len(N)+1), np.array([np.median(times) for times in opt1]),color = colors[0], label=part[0])
-    plt.boxplot(opt1, labels = N, medianprops = {'color':colors[0]})
+    plt.boxplot(opt1, labels = N, medianprops = {'color':colors[0]}, boxprops = dict(color=colors[0]))
     
     plt.plot(range(1,len(N)+1), np.array([np.median(times) for times in opt2]),color = colors[1], label=part[1])
-    plt.boxplot(opt2, labels = N, medianprops = {'color':colors[1]})
+    plt.boxplot(opt2, labels = N, medianprops = {'color':colors[1]}, boxprops = dict(color=colors[1]))
     
     plt.plot(range(1,len(N)+1), np.array([np.median(times) for times in opt3]),color = colors[2], label=part[2])
-    plt.boxplot(opt3, labels = N, medianprops = {'color':colors[2]})
+    plt.boxplot(opt3, labels = N, medianprops = {'color':colors[2]}, boxprops = dict(color=colors[2]))
     
     plt.legend()
     plt.yscale('log')
