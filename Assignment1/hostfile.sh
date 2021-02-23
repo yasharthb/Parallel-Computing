@@ -8,7 +8,7 @@ ppn=$1
 num_nodes=$2
 > hostfile
 touch hostfile.tmp
-for i in $(seq 22 34)   #4 core nodes beyond this range. Avoiding check
+for i in $(seq 34 -1 1)   #4 core nodes beyond this range. Avoiding check
 do
     ping -c2 csews$i.cse.iitk.ac.in > /dev/null
     if [ $? -eq 0 ]
