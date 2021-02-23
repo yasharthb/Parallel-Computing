@@ -19,7 +19,7 @@ Following is a list of the files and possible options in them :
 	-   We report the total time spent in communication and computation for all the time steps
 
 ```sh
-	mpirun -np P ./halo N O   #P is the number of processes, N is the number of sides in data matrix
+	mpirun -np P ./halo N O   #P is the number of processes, N is the length of side of data matrix
 				# & O is an option{1,2,3} which branches for various communication schemes covered.
 ```
 
