@@ -16,6 +16,7 @@ Following is a list of the files and possible options in them :
 	-	Waitall while all communication (send/receives) finish.
 	-	Case specific computation of halo elements using received elements from neighboring processes.
 	-	Back to communication step when in a time step loop.
+	-   We report the total time spent in communication and computation for all the time steps
 
 ```sh
 	mpirun -np P ./halo N O   #P is the number of processes, N is the number of sides in data matrix
@@ -69,5 +70,11 @@ Files created in this process include `halo`(executable for src.c), `hostfile`, 
 
 ## Observations
 
--	The multiple send/recv method performed poorly as compared to the other two. The performance can be attributed to the large number of Isend/Irecv calls(one each for each halo element) it is required to make for communication of halo elements.
--	The performance of the MPI Pack/Unpack and Derived datatypes fare well in terms of time taken for the entire computation. There is a small amount of variation seen in all the plots which settles as we move beyond N=128 where the time of both the methods is almost coincides. The initial disparity could be because of the data being small and the Network lag playing a larger role in the time of communication.
+-	For all values of P (number of processors), the multiple send/recv method performed poorly as compared to the other two. The performance can be attributed to the large number of Isend/Irecv calls (one each for each halo element) needed for communication of halo elements.
+
+-	The performance of the MPI Pack/Unpack and Derived datatypes methods is better in terms of total time taken as compared to the multiple sends/receive method. The performance of both these methods is comparable to each other and the time of both the methods almost coincides as we move beyond N=128. For lower values of N, we observe some differences between the timings of these methods. This initial disparity could be because of the data being small and the network lag playing a larger role in the time of communication.
+
+-   For all the methods, and all values of P, we observe that the variation between the 5 executions of the same configuration is higher for lower values of N. As we move beyond N=128, this variation between the 5 executions is very small. This may also be because the variations introduced by network lag are more visible when the amount of data is less and hence, the time of communication/computation is smaller.
+
+
+
