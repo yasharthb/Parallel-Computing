@@ -12,9 +12,9 @@ Following is a list of the files and possible options in them :
 	The general structure of each branched out function is:
 	-	Random initialization of a matrix per process.
 	-	Communication using non-blocking calls Isend/Irecv and branch specific methods.
-	-	Computation on inner elements of each matrix.
-	-	Waitall while all comm calls to return.
-	-	Case specific computation of received halo elements.
+	-	Computation on inner elements of each matrix (which do not need any elements from neighboring processes).
+	-	Waitall while all communication (send/receives) finish.
+	-	Case specific computation of halo elements using received elements from neighboring processes.
 	-	Back to communication step when in a time step loop.
 
 ```sh
@@ -70,4 +70,4 @@ Files created in this process include `halo`(executable for src.c), `hostfile`, 
 ## Observations
 
 -	The multiple send/recv method performed poorly as compared to the other two. The performance can be attributed to the large number of Isend/Irecv calls(one each for each halo element) it is required to make for communication of halo elements.
--	The performance of the Mack/Unpack and Derived datatype fare well in terms of time taken for the entire computation. There is a small amount of jitter seen in all the plots which settles as we move beyond N=128 where the time of both the methods is almost coincides. The initial disparity could be because of the data being small and the Network lag playing a larger role in the time of computation.
+-	The performance of the MPI Pack/Unpack and Derived datatypes fare well in terms of time taken for the entire computation. There is a small amount of variation seen in all the plots which settles as we move beyond N=128 where the time of both the methods is almost coincides. The initial disparity could be because of the data being small and the Network lag playing a larger role in the time of communication.
