@@ -77,4 +77,9 @@ Files created in this process include `halo`(executable for src.c), `hostfile`, 
 -   For all the methods, and all values of P, we observe that the variation between the 5 executions of the same configuration is higher for lower values of N. As we move beyond N=128, this variation between the 5 executions is very small. This may also be because the variations introduced by network lag are more visible when the amount of data is less and hence, the time of communication/computation is smaller.
 
 
+### Box Plots
 
+![# of Processes = 16](plot16.png)
+![# of Processes = 36](plot36.png)
+![# of Processes = 49](plot49.png)
+![# of Processes = 64](plot64.png)
