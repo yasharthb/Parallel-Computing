@@ -6,41 +6,118 @@
 #include <math.h>
 #include <time.h>
 #include "mpi.h"
+#define KB 1024
 
 void mpi_bcast_default(int D){
 
-double avg_time=0.0;
+//  printf("Inside Bcast Default\n");
+
+  int myrank, size;
+  double *buf;
+  int count = (D*KB)/sizeof(double);
+  buf = (double *)malloc(D*KB);
+
+  MPI_Init(NULL, NULL);
+  MPI_Comm_rank( MPI_COMM_WORLD, &myrank);
+  MPI_Comm_size( MPI_COMM_WORLD, &size);
+
+  // Initialize buffer to random values
+  srand(time(NULL));
+  double high = 2021.0;
+  for (int i=1; i<=count; i++)
+     buf[i] = (high*(double)rand())/(double)RAND_MAX;
+
+  // has to be called by all processes
+  double sTime = MPI_Wtime();
+  MPI_Bcast(buf, count, MPI_DOUBLE, 1, MPI_COMM_WORLD);
+  double eTime = MPI_Wtime();
+
+  // simple check
+  printf ("bcast default %d %lf \n", myrank, eTime - sTime);
+
+  MPI_Finalize();
+  free(buf);
 }
 void mpi_reduce_default(int D){
 
-double avg_time=0.0;
+  int myrank, size, count;
+  double *buf = (double *)malloc(D*KB);
+  double *recvBuf = (double *)malloc(D*KB);
+  count = (D*KB)/sizeof(double);
 
+  MPI_Init(NULL, NULL);
+  MPI_Comm_rank(MPI_COMM_WORLD, &myrank);
+  MPI_Comm_size(MPI_COMM_WORLD, &size);
+
+  // Initialize buffer to random values
+  srand(time(NULL));
+  double high = 2021.0;
+  for (int i=1; i<=count; i++)
+     buf[i] = (high*(double)rand())/(double)RAND_MAX;
+ 
+  double sTime = MPI_Wtime();
+  MPI_Reduce(buf, recvBuf, count, MPI_DOUBLE, MPI_MAX, 0, MPI_COMM_WORLD); 
+  double eTime = MPI_Wtime();
+
+  // simple check
+  printf ("reduce default %d %lf \n", myrank, eTime - sTime);
+
+  // finalize
+  MPI_Finalize();
+  free(buf);
+  free(recvBuf);
 }
 void mpi_gather_default(int D){
-double avg_time=0.0;
 
+  int myrank, size, count;
+  double *buf = (double *)malloc(D*KB);;
+  count = (D*KB)/sizeof(double);
+
+  // Setup
+  MPI_Init(NULL, NULL);
+  MPI_Comm_rank(MPI_COMM_WORLD, &myrank);
+  MPI_Comm_size(MPI_COMM_WORLD, &size);
+
+  // Initialize buffer to random values
+  srand(time(NULL));
+  double high = 2021.0;
+  for (int i=1; i<=count; i++)
+     buf[i] = (high*(double)rand())/(double)RAND_MAX;
+
+  double *recvBuf = (double *)malloc(D*KB*size); //significant at the root process
+ 
+  double sTime = MPI_Wtime();
+  MPI_Gather(buf, count, MPI_DOUBLE, recvBuf, count, MPI_DOUBLE, 0, MPI_COMM_WORLD);
+  double eTime = MPI_Wtime();
+
+  // simple check
+  printf ("gather default %d %lf \n", myrank, eTime - sTime);
+
+  // finalize
+  MPI_Finalize();
+  free(buf);
+  free(recvBuf)
 }
 void mpi_alltoallv_default(int D){
-double avg_time=0.0;
-
+printf("Inside A2Av Default\n");
 }
 
 
 void mpi_bcast_optimized(int D){
-double avg_time=0.0;
-
+printf("Inside Bcast Optimized\n");
 }
 void mpi_reduce_optimized(int D){
 double avg_time=0.0;
-
+printf("Inside reduce Optimized\n");
 }
 void mpi_gather_optimized(int D){
 double avg_time=0.0;
+printf("Inside gather Optimized\n");
 
 }
 void mpi_alltoallv_optimized(int D){
 double avg_time=0.0;
-
+printf("Inside A2Av optimized\n");
 }
 
 int main( int argc, char *argv[])
