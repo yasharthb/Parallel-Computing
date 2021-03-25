@@ -59,6 +59,7 @@ void mpi_bcast_default(int D){
   MPI_Finalize();
   free(buf);
 }
+
 void mpi_reduce_default(int D){
 
   int myrank, size, count;
@@ -88,6 +89,7 @@ void mpi_reduce_default(int D){
   free(buf);
   free(recvBuf);
 }
+
 void mpi_gather_default(int D){
 
   int myrank, size, count;
@@ -119,8 +121,58 @@ void mpi_gather_default(int D){
   free(buf);
   free(recvBuf);
 }
+
 void mpi_alltoallv_default(int D){
-printf("Inside A2Av Default\n");
+	  
+  int myrank, size, count;
+  count = (D*KB)/sizeof(double);
+
+  // Setup
+  MPI_Init(NULL, NULL);
+  MPI_Comm_rank(MPI_COMM_WORLD, &myrank);
+  MPI_Comm_size(MPI_COMM_WORLD, &size);
+  
+  double *buf = (double *)malloc(D*KB*size);
+/*
+  int *countBuf = (int *) malloc(sizeof(int)*size);
+  int *displBuf = (int *) malloc(sizeof(int)*size);
+
+  int displ = 0;
+*/
+  // Initialize array
+  for (int i = 0; i < count * size; i++) {
+    buf[i] = i;
+  }
+
+/*
+  // Initialize buffer to random values
+  srand(time(NULL));
+  double high = 2021.0;
+  for (int i=1; i<=count; i++)
+     buf[i] = (high*(double)rand())/(double)RAND_MAX;
+*/
+
+  // every process receives size elements from other processes
+  double *recvBuf = (double *) malloc(D*KB*size);
+  
+  double sTime = MPI_Wtime();
+  MPI_Alltoall(buf, count, MPI_DOUBLE, recvBuf, count, MPI_DOUBLE, MPI_COMM_WORLD);
+  double eTime = MPI_Wtime();
+
+  printf ("AlltoAll default %d %lf \n", myrank, eTime - sTime);
+
+  /*
+  
+  // Verify
+  for (int i = 0; i < count * size; i++) {
+    printf("%d: %lf\n", myrank, recvBuf[i]);
+  }
+  */
+
+  // Finalize
+  MPI_Finalize();
+  free(buf);
+  free(recvBuf);
 }
 
 void mpi_bcast_optimized(int D){
