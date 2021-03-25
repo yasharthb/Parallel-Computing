@@ -132,16 +132,13 @@ void mpi_alltoallv_default(int D){
   MPI_Comm_rank(MPI_COMM_WORLD, &myrank);
   MPI_Comm_size(MPI_COMM_WORLD, &size);
   
-  double *buf = (double *)malloc(D*KB*size);
-/*
-  int *countBuf = (int *) malloc(sizeof(int)*size);
-  int *displBuf = (int *) malloc(sizeof(int)*size);
+  double *buf = (double *)malloc(sizeof(double) * size * size);
+  double *recvBuf = (double *)malloc(sizeof(double) * size * size);
 
-  int displ = 0;
-*/
-  // Initialize array
-  for (int i = 0; i < count * size; i++) {
-    buf[i] = i;
+  /* Load up the buffers */
+  for (int i=0; i<size*size; i++) {
+      buf[i] = i + 100*myrank;
+      recvBuf[i] = -i;
   }
 
 /*
@@ -152,27 +149,54 @@ void mpi_alltoallv_default(int D){
      buf[i] = (high*(double)rand())/(double)RAND_MAX;
 */
 
-  // every process receives size elements from other processes
-  double *recvBuf = (double *) malloc(D*KB*size);
-  
+
+  int *countBuf = (int *)malloc( size * sizeof(int));
+  int *recvCountBuf = (int *)malloc( size * sizeof(int));
+  int *recvDisplBuf = (int *)malloc( size * sizeof(int));
+  int *displBuf = (int *)malloc( size * sizeof(int));
+
+  for (int i=0; i<size; i++) {
+      countBuf[i] = i;
+      recvCountBuf[i] = myrank;
+      recvDisplBuf[i] = i * myrank;
+      displBuf[i] = (i * (i+1))/2;
+  }
+
   double sTime = MPI_Wtime();
-  MPI_Alltoall(buf, count, MPI_DOUBLE, recvBuf, count, MPI_DOUBLE, MPI_COMM_WORLD);
+  MPI_Alltoallv( buf, countBuf, displBuf, MPI_DOUBLE,
+                       recvBuf, recvCountBuf, recvDisplBuf, MPI_DOUBLE, MPI_COMM_WORLD);
   double eTime = MPI_Wtime();
 
-  printf ("AlltoAll default %d %lf \n", myrank, eTime - sTime);
 
-  /*
-  
-  // Verify
-  for (int i = 0; i < count * size; i++) {
-    printf("%d: %lf\n", myrank, recvBuf[i]);
-  }
-  */
+/* Check recvBuf
+    int *p;
+    for (int i=0; i<size; i++) {
+        p = recvBuf + recvDisplBuf[i];
+        for (int j=0; j<myrank; j++) {
+            if (p[j] != i * 100 + (myrank*(myrank+1))/2 + j) {
+                printf("[%d] got %d expected %d for %dth\n",
+                                    myrank, p[j],(i*(i+1))/2 + j, j);
+            }else{
+                printf("[%d] got %d expected %d for %dth\n",
+                                    myrank, p[j],(i*(i+1))/2 + j, j);
+	    }
+        }
+    }
+*/
+
+  printf ("AlltoAllv default %d %lf \n", myrank, eTime - sTime);
 
   // Finalize
   MPI_Finalize();
   free(buf);
   free(recvBuf);
+  free(countBuf);
+  free(recvCountBuf);
+  free(displBuf);
+  free(recvDisplBuf);
+
+/* Inspired from http://mpi.deino.net/mpi_functions/MPI_Alltoallv.html */
+
 }
 
 void mpi_bcast_optimized(int D){
