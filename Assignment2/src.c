@@ -179,7 +179,7 @@ void mpi_bcast_optimized(int D){
   double eTime = MPI_Wtime();
 
   // simple check
-  printf ("bcast default %d %lf \n", myrank, eTime - sTime);
+  printf ("bcast optmized %d %lf \n", myrank, eTime - sTime);
 
   MPI_Finalize();
   free(buf);
@@ -242,15 +242,67 @@ void mpi_reduce_optimized(int D){
   double eTime = MPI_Wtime();
 
   // simple check
-  printf ("bcast default %d %lf \n", myrank, eTime - sTime);
+  printf ("reduce optimized %d %lf \n", myrank, eTime - sTime);
 
   MPI_Finalize();
   free(buf);
+  free(recvBuf);
+  free(recvBuf2);
 
 }
 void mpi_gather_optimized(int D){
-double avg_time=0.0;
-printf("Inside gather Optimized\n");
+
+  int myrank, size, length;
+  double *buf, *recvBuf, *recvBuf2;
+  int count = (D*KB)/sizeof(double);
+  buf = (double *)malloc(D*KB);
+  char name[MPI_MAX_PROCESSOR_NAME];
+
+  MPI_Init(NULL, NULL);
+  MPI_Comm_rank( MPI_COMM_WORLD, &myrank);
+  MPI_Comm_size( MPI_COMM_WORLD, &size);
+  MPI_Get_processor_name(name, &length); //Used to later to identify the group to which the node belongs 
+
+
+  // Creating Intra Groups for all set of nodes in action
+  int intra_color = get_group_id(name,length);
+  int intra_rank, intra_size;
+
+  MPI_Comm intra_comm;
+  MPI_Comm_split (MPI_COMM_WORLD, intra_color, myrank, &intra_comm);
+
+  MPI_Comm_rank(intra_comm,&intra_rank);
+  MPI_Comm_size(intra_comm,&intra_size);
+
+  recvBuf = (double *) malloc(D*KB*intra_size);
+
+  // Creating an inter group communication picking the 0th ranked element in each intra group
+  int inter_color = 0;
+  int inter_rank, inter_size;
+
+  MPI_Comm inter_comm;
+  if(intra_rank == 0)
+    MPI_Comm_split(MPI_COMM_WORLD, inter_color, myrank, &inter_comm);
+  else
+    MPI_Comm_split(MPI_COMM_WORLD, MPI_UNDEFINED, myrank,&inter_comm);
+
+  MPI_Comm_rank(inter_comm,&inter_rank);
+  MPI_Comm_size(inter_comm,&inter_size);
+
+  recvBuf2 = (double *) malloc(D*KB*size);
+
+  double sTime = MPI_Wtime();
+  MPI_Gather(buf, count, MPI_DOUBLE, recvBuf, count, MPI_DOUBLE, 0, intra_comm);
+  MPI_Gather(recvBuf, count*intra_size, MPI_DOUBLE, recvBuf2, count*intra_size, MPI_DOUBLE, 0, inter_comm);
+  double eTime = MPI_Wtime();
+
+  // simple check
+  printf ("gather optimized %d %lf \n", myrank, eTime - sTime);
+
+  // finalize
+  MPI_Finalize();
+  free(buf);
+  free(recvBuf);
 
 }
 void mpi_alltoallv_optimized(int D){
