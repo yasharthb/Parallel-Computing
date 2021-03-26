@@ -49,10 +49,4 @@ done
 rm data.tmp > /dev/null
 echo "All configurations done! Generating plots"
 python plot.py
-
-$(echo "scale=6;$sum +$num" | bc -l)
-  i=$((i + 1))
-done
-avg=$(echo $sum / $N | bc -l)
-printf "Option: %d Mode: %d Data: %d Avg_Time: %.6lf\n" $O $M $D $avg
-
+echo "Plots generated! Exiting"
