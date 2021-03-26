@@ -5,22 +5,54 @@
 make clean
 make
 
-for execution in {1..10} do
-   for P in 4 16 do
-      for ppn in 1 8 do
-	 for D in 16 256 2048 do
-	    for option in {1..4} do
-		python script.py
-		for optimized in 0 1 do
-		   data_file="data_${option}.txt"
-		   mpirun -np $((P*ppn)) -f hostfile ./code D option optimized | tee -a $data_file
+touch data.tmp > /dev/null
+for execution in {1..10}
+do
+   for P in 4 16
+   do
+      for ppn in 1 8
+      do
+	 for D in 16 256 2048
+         do
+	    for option in {1..4}
+            do
+                echo "Generating fresh hostfile...."
+		python script.py 4 $P $ppn
+                sum_d=0.0
+                sum_o=0.0
+                tmp=0.0
+                N=5
+                data_file="data_${option}.txt"
+                for i in {1..5}
+                do
+	           for optimized in 0 1
+                   do
+                      mpirun -np $((P*ppn)) -f hostfile ./code $D $option $optimized
+                      tmp=$(<data.tmp)
+                      if [[ $optimized -eq 1 ]]
+		      then
+			  sum_o=$(echo "scale=6;$sum_o +$tmp" | bc -l)
+		      else
+                          sum_d=$(echo "scale=6;$sum_d +$tmp" | bc -l)
+		      fi
+                   done
 		done
+		avg_o=$(echo $sum_o / $N | bc -l)
+		printf "Nodes: %d PPN: %d Option: %d Mode: 1 Data: %d Avg_Time: %.6lf\n" $P $ppn $option $D $avg_o >>$data_file
+		avg_d=$(echo $sum_d / $N | bc -l)
+		printf "Nodes: %d PPN: %d Option: %d Mode: 0 Data: %d Avg_Time: %.6lf\n" $P $ppn $option $D $avg_d >>$data_file
 	    done
 	done
       done
    done
 done
-
+rm data.tmp > /dev/null
 echo "All configurations done! Generating plots"
 python plot.py
+
+$(echo "scale=6;$sum +$num" | bc -l)
+  i=$((i + 1))
+done
+avg=$(echo $sum / $N | bc -l)
+printf "Option: %d Mode: %d Data: %d Avg_Time: %.6lf\n" $O $M $D $avg
 

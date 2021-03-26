@@ -24,7 +24,9 @@ for line in lines:
     nodes_in_this_group = 0
 
     for node in nodes:
-        status = subprocess.call(["ssh", node, "uptime"])
+        status=-1
+        with open(os.devnull, 'wb') as shutup:
+	    status = subprocess.call(["ssh", node, "uptime"], stdout=shutup, stderr=shutup)
         if status == 0:
             nodes_in_this_group += 1
             reachable.append(node)
@@ -41,7 +43,7 @@ for line in lines:
         groups_checked += 1
 
 
-subprocess.call(["clear"])
+#subprocess.call(["clear"])
 count = 0
 if groups_checked == total_groups and available_groups < no_of_groups:
     print "Not enough nodes available"

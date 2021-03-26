@@ -29,7 +29,7 @@ int get_group_id(char *name, int length){
     return line_no; 
 }
 
-void mpi_bcast_default(int D){
+void mpi_bcast_default(int D, double *time_curr){
 
 //  printf("Inside Bcast Default\n");
 
@@ -37,6 +37,8 @@ void mpi_bcast_default(int D){
   double *buf;
   int count = (D*KB)/sizeof(double);
   buf = (double *)malloc(D*KB);
+  FILE *fp;
+  fp = fopen("data.tmp", "w");
 
   MPI_Init(NULL, NULL);
   MPI_Comm_rank( MPI_COMM_WORLD, &myrank);
@@ -53,19 +55,33 @@ void mpi_bcast_default(int D){
   MPI_Bcast(buf, count, MPI_DOUBLE, 1, MPI_COMM_WORLD);
   double eTime = MPI_Wtime();
 
+  double time = eTime - sTime;
+  double max_time;
+
+  MPI_Reduce (&time, &max_time, 1, MPI_DOUBLE, MPI_MAX, 0, MPI_COMM_WORLD);
+
   // simple check
   printf ("bcast default %d %lf \n", myrank, eTime - sTime);
 
+  if (myrank == 0){
+	  fprintf(fp,"%lf\n",max_time);
+	  fprintf(stdout,"%lf\n",max_time);
+ 	  *time_curr = max_time;
+  }
+
+  fclose(fp);
   MPI_Finalize();
   free(buf);
 }
 
-void mpi_reduce_default(int D){
+void mpi_reduce_default(int D, double *time_curr){
 
   int myrank, size, count;
   double *buf = (double *)malloc(D*KB);
   double *recvBuf = (double *)malloc(D*KB);
   count = (D*KB)/sizeof(double);
+  FILE *fp;
+  fp = fopen("data.tmp", "w");
 
   MPI_Init(NULL, NULL);
   MPI_Comm_rank(MPI_COMM_WORLD, &myrank);
@@ -81,8 +97,20 @@ void mpi_reduce_default(int D){
   MPI_Reduce(buf, recvBuf, count, MPI_DOUBLE, MPI_MAX, 0, MPI_COMM_WORLD); 
   double eTime = MPI_Wtime();
 
+  double time = eTime - sTime;
+  double max_time;
+
+  MPI_Reduce (&time, &max_time, 1, MPI_DOUBLE, MPI_MAX, 0, MPI_COMM_WORLD);
+
   // simple check
   printf ("reduce default %d %lf \n", myrank, eTime - sTime);
+
+  if (myrank == 0){
+          fprintf(fp,"%lf\n",max_time);
+          fprintf(stdout,"%lf\n",max_time);
+          *time_curr = max_time;
+  }
+
 
   // finalize
   MPI_Finalize();
@@ -90,11 +118,13 @@ void mpi_reduce_default(int D){
   free(recvBuf);
 }
 
-void mpi_gather_default(int D){
+void mpi_gather_default(int D, double *time_curr){
 
   int myrank, size, count;
   double *buf = (double *)malloc(D*KB);;
   count = (D*KB)/sizeof(double);
+  FILE *fp;
+  fp = fopen("data.tmp", "w");
 
   // Setup
   MPI_Init(NULL, NULL);
@@ -113,8 +143,19 @@ void mpi_gather_default(int D){
   MPI_Gather(buf, count, MPI_DOUBLE, recvBuf, count, MPI_DOUBLE, 0, MPI_COMM_WORLD);
   double eTime = MPI_Wtime();
 
+  double time = eTime - sTime;
+  double max_time;
+
+  MPI_Reduce (&time, &max_time, 1, MPI_DOUBLE, MPI_MAX, 0, MPI_COMM_WORLD);
+
   // simple check
   printf ("gather default %d %lf \n", myrank, eTime - sTime);
+
+  if (myrank == 0){
+          fprintf(fp,"%lf\n",max_time);
+          fprintf(stdout,"%lf\n",max_time);
+          *time_curr = max_time;
+  }
 
   // finalize
   MPI_Finalize();
@@ -122,16 +163,19 @@ void mpi_gather_default(int D){
   free(recvBuf);
 }
 
-void mpi_alltoallv_default(int D){
+void mpi_alltoallv_default(int D, double *time_curr){
 	  
   int myrank, size, count;
   count = (D*KB)/sizeof(double);
+  FILE *fp;
+  fp = fopen("data.tmp", "w");
+
 
   // Setup
   MPI_Init(NULL, NULL);
   MPI_Comm_rank(MPI_COMM_WORLD, &myrank);
   MPI_Comm_size(MPI_COMM_WORLD, &size);
-  
+
   double *buf = (double *)malloc(sizeof(double) * size * size);
   double *recvBuf = (double *)malloc(sizeof(double) * size * size);
 
@@ -184,7 +228,18 @@ void mpi_alltoallv_default(int D){
     }
 */
 
+  double time = eTime - sTime;
+  double max_time;
+
+  MPI_Reduce (&time, &max_time, 1, MPI_DOUBLE, MPI_MAX, 0, MPI_COMM_WORLD);
+
   printf ("AlltoAllv default %d %lf \n", myrank, eTime - sTime);
+
+  if (myrank == 0){
+          fprintf(fp,"%lf\n",max_time);
+          fprintf(stdout,"%lf\n",max_time);
+          *time_curr = max_time;
+  }
 
   // Finalize
   MPI_Finalize();
@@ -199,14 +254,18 @@ void mpi_alltoallv_default(int D){
 
 }
 
-void mpi_bcast_optimized(int D){
+void mpi_bcast_optimized(int D, double *time_curr){
 
   int myrank, size, length;
   double *buf;
   int count = (D*KB)/sizeof(double);
   buf = (double *)malloc(D*KB);
   char name[MPI_MAX_PROCESSOR_NAME];
-  
+ 
+  FILE *fp;
+  fp = fopen("data.tmp", "w");
+
+
   MPI_Init(NULL, NULL);
   MPI_Comm_rank( MPI_COMM_WORLD, &myrank);
   MPI_Comm_size( MPI_COMM_WORLD, &size);
@@ -226,16 +285,19 @@ void mpi_bcast_optimized(int D){
 
   // Creating an inter communication picking the 0th ranked element in each intra group
   int inter_color = 0;
-  int inter_rank, inter_size;
+  int inter_rank=-1, inter_size=-1;
 
   MPI_Comm inter_comm;
-  if(intra_rank == 0)
+  if(intra_rank == 0){
   	MPI_Comm_split(MPI_COMM_WORLD, inter_color, myrank, &inter_comm);
-  else
+        MPI_Comm_rank(inter_comm,&inter_rank);
+	MPI_Comm_size(inter_comm,&inter_size);
+    }
+   else
 	MPI_Comm_split(MPI_COMM_WORLD, MPI_UNDEFINED, myrank,&inter_comm);
 
-  MPI_Comm_rank(inter_comm,&inter_rank);
-  MPI_Comm_size(inter_comm,&inter_size);
+  //MPI_Comm_rank(inter_comm,&inter_rank);
+  //MPI_Comm_size(inter_comm,&inter_size);
 
   
  /* 
@@ -250,17 +312,33 @@ void mpi_bcast_optimized(int D){
 
   // has to be called by all processes
   double sTime = MPI_Wtime();
-  MPI_Bcast(buf, count, MPI_DOUBLE, 0, inter_comm);
+  if(intra_rank==0)
+  	MPI_Bcast(buf, count, MPI_DOUBLE, 0, inter_comm);
   MPI_Bcast(buf, count, MPI_DOUBLE, 0, intra_comm);
   double eTime = MPI_Wtime();
+
+  double time = eTime - sTime;
+  double max_time;
+
+  MPI_Reduce (&time, &max_time, 1, MPI_DOUBLE, MPI_MAX, 0, MPI_COMM_WORLD);
 
   // simple check
   printf ("bcast optmized %d %lf \n", myrank, eTime - sTime);
 
+  if (myrank == 0){
+          fprintf(fp,"%lf\n",max_time);
+          fprintf(stdout,"%lf\n",max_time);
+          *time_curr = max_time;
+  }
+
+  if(intra_rank==0)
+        MPI_Comm_free(&inter_comm);
+  MPI_Comm_free(&intra_comm);
+
   MPI_Finalize();
   free(buf);
 }
-void mpi_reduce_optimized(int D){
+void mpi_reduce_optimized(int D, double *time_curr){
 
   int myrank, size, length;
   double *buf, *recvBuf, *recvBuf2;
@@ -269,7 +347,10 @@ void mpi_reduce_optimized(int D){
   recvBuf = (double *) malloc(D*KB);
   recvBuf2 = (double *) malloc(D*KB);
   char name[MPI_MAX_PROCESSOR_NAME];
-  
+  FILE *fp;
+  fp = fopen("data.tmp", "w");
+
+
   MPI_Init(NULL, NULL);
   MPI_Comm_rank( MPI_COMM_WORLD, &myrank);
   MPI_Comm_size( MPI_COMM_WORLD, &size);
@@ -289,16 +370,16 @@ void mpi_reduce_optimized(int D){
 
   // Creating an inter group communication picking the 0th ranked element in each intra group
   int inter_color = 0;
-  int inter_rank, inter_size;
+  int inter_rank =-1, inter_size =-1;
 
   MPI_Comm inter_comm;
-  if(intra_rank == 0)
+  if(intra_rank == 0){
     MPI_Comm_split(MPI_COMM_WORLD, inter_color, myrank, &inter_comm);
+    MPI_Comm_rank(inter_comm,&inter_rank);
+    MPI_Comm_size(inter_comm,&inter_size);
+  }
   else
     MPI_Comm_split(MPI_COMM_WORLD, MPI_UNDEFINED, myrank,&inter_comm);
-
-  MPI_Comm_rank(inter_comm,&inter_rank);
-  MPI_Comm_size(inter_comm,&inter_size);
 
   
  /* 
@@ -314,25 +395,46 @@ void mpi_reduce_optimized(int D){
   // has to be called by all processes
   double sTime = MPI_Wtime();
   MPI_Reduce(buf, recvBuf, count, MPI_DOUBLE, MPI_MAX, 0, intra_comm);
-  MPI_Reduce(recvBuf, recvBuf2, count, MPI_DOUBLE, MPI_MAX, 0, inter_comm);
+  if(intra_rank==0)
+  	MPI_Reduce(recvBuf, recvBuf2, count, MPI_DOUBLE, MPI_MAX, 0, inter_comm);
   double eTime = MPI_Wtime();
+
+  double time = eTime - sTime;
+  double max_time;
+
+  MPI_Reduce (&time, &max_time, 1, MPI_DOUBLE, MPI_MAX, 0, MPI_COMM_WORLD);
 
   // simple check
   printf ("reduce optimized %d %lf \n", myrank, eTime - sTime);
 
+  if (myrank == 0){
+          fprintf(fp,"%lf\n",max_time);
+          fprintf(stdout,"%lf\n",max_time);
+          *time_curr = max_time;
+  }
+
+  if(intra_rank==0)
+  	MPI_Comm_free(&inter_comm);
+  MPI_Comm_free(&intra_comm);
+
+  //Finalize
   MPI_Finalize();
   free(buf);
   free(recvBuf);
   free(recvBuf2);
 
 }
-void mpi_gather_optimized(int D){
+
+void mpi_gather_optimized(int D, double *time_curr){
 
   int myrank, size, length;
   double *buf, *recvBuf, *recvBuf2;
   int count = (D*KB)/sizeof(double);
   buf = (double *)malloc(D*KB);
   char name[MPI_MAX_PROCESSOR_NAME];
+  FILE *fp;
+  fp = fopen("data.tmp", "w");
+
 
   MPI_Init(NULL, NULL);
   MPI_Comm_rank( MPI_COMM_WORLD, &myrank);
@@ -357,33 +459,160 @@ void mpi_gather_optimized(int D){
   int inter_rank, inter_size;
 
   MPI_Comm inter_comm;
-  if(intra_rank == 0)
+  if(intra_rank == 0){
     MPI_Comm_split(MPI_COMM_WORLD, inter_color, myrank, &inter_comm);
+    MPI_Comm_rank(inter_comm,&inter_rank);
+    MPI_Comm_size(inter_comm,&inter_size);
+  }
   else
     MPI_Comm_split(MPI_COMM_WORLD, MPI_UNDEFINED, myrank,&inter_comm);
-
-  MPI_Comm_rank(inter_comm,&inter_rank);
-  MPI_Comm_size(inter_comm,&inter_size);
 
   recvBuf2 = (double *) malloc(D*KB*size);
 
   double sTime = MPI_Wtime();
   MPI_Gather(buf, count, MPI_DOUBLE, recvBuf, count, MPI_DOUBLE, 0, intra_comm);
-  MPI_Gather(recvBuf, count*intra_size, MPI_DOUBLE, recvBuf2, count*intra_size, MPI_DOUBLE, 0, inter_comm);
+  if(intra_rank==0)
+      MPI_Gather(recvBuf, count*intra_size, MPI_DOUBLE, recvBuf2, count*intra_size, MPI_DOUBLE, 0, inter_comm);
   double eTime = MPI_Wtime();
 
-  // simple check
+  double time = eTime - sTime;
+  double max_time;
+
+  MPI_Reduce (&time, &max_time, 1, MPI_DOUBLE, MPI_MAX, 0, MPI_COMM_WORLD);
+
+   // simple check
   printf ("gather optimized %d %lf \n", myrank, eTime - sTime);
 
+  if (myrank == 0){
+          fprintf(fp,"%lf\n",max_time);
+          fprintf(stdout,"%lf\n",max_time);
+          *time_curr = max_time;
+  }
+
+  if(intra_rank==0)
+      MPI_Comm_free(&inter_comm);
+  MPI_Comm_free(&intra_comm);
   // finalize
   MPI_Finalize();
   free(buf);
   free(recvBuf);
 
 }
-void mpi_alltoallv_optimized(int D){
-double avg_time=0.0;
-printf("Inside A2Av optimized\n");
+
+void mpi_alltoallv_optimized(int D, double *time_curr){
+
+  int myrank, size, length, count;
+  count = (D*KB)/sizeof(double);
+  char name[MPI_MAX_PROCESSOR_NAME];
+  FILE *fp;
+  fp = fopen("data.tmp", "w");
+
+  // Setup
+  MPI_Init(NULL, NULL);
+  MPI_Comm_rank(MPI_COMM_WORLD, &myrank);
+  MPI_Comm_size(MPI_COMM_WORLD, &size);
+
+  // Creating Intra Groups for all set of nodes in action
+  int intra_color = get_group_id(name,length);
+  int intra_rank, intra_size;
+
+  MPI_Comm intra_comm;
+  MPI_Comm_split (MPI_COMM_WORLD, intra_color, myrank, &intra_comm);
+
+  MPI_Comm_rank(intra_comm,&intra_rank);
+  MPI_Comm_size(intra_comm,&intra_size);
+
+  // Creating an inter group communication picking the 0th ranked element in each intra group
+  int inter_color = 0;
+  int inter_rank, inter_size;
+
+  MPI_Comm inter_comm;
+  if(intra_rank == 0){
+    MPI_Comm_split(MPI_COMM_WORLD, inter_color, myrank, &inter_comm);
+    MPI_Comm_rank(inter_comm,&inter_rank);
+    MPI_Comm_size(inter_comm,&inter_size);
+  }
+  else
+    MPI_Comm_split(MPI_COMM_WORLD, MPI_UNDEFINED, myrank,&inter_comm);
+  
+  double *buf = (double *)malloc(sizeof(double) * size * size);
+  double *recvBuf = (double *)malloc(sizeof(double) * size * size);
+
+  /* Load up the buffers */
+  for (int i=0; i<size*size; i++) {
+      buf[i] = i + 100*myrank;
+      recvBuf[i] = -i;
+  }
+
+/*
+  // Initialize buffer to random values
+  srand(time(NULL));
+  double high = 2021.0;
+  for (int i=1; i<=count; i++)
+     buf[i] = (high*(double)rand())/(double)RAND_MAX;
+*/
+
+
+  int *countBuf = (int *)malloc(size * sizeof(int));
+  int *recvCountBuf = (int *)malloc(size * sizeof(int));
+  int *recvDisplBuf = (int *)malloc(size * sizeof(int));
+  int *displBuf = (int *)malloc(size * sizeof(int));
+
+  for (int i=0; i<size; i++) {
+      countBuf[i] = i;
+      recvCountBuf[i] = myrank;
+      recvDisplBuf[i] = i * myrank;
+      displBuf[i] = (i * (i+1))/2;
+  }
+
+  double sTime = MPI_Wtime();
+  MPI_Alltoallv( buf, countBuf, displBuf, MPI_DOUBLE,
+                       recvBuf, recvCountBuf, recvDisplBuf, MPI_DOUBLE, MPI_COMM_WORLD);
+  double eTime = MPI_Wtime();
+
+  /* Check recvBuf
+    int *p;
+    for (int i=0; i<size; i++) {
+        p = recvBuf + recvDisplBuf[i];
+        for (int j=0; j<myrank; j++) {
+            if (p[j] != i * 100 + (myrank*(myrank+1))/2 + j) {
+                printf("[%d] got %d expected %d for %dth\n",
+                                    myrank, p[j],(i*(i+1))/2 + j, j);
+            }else{
+                printf("[%d] got %d expected %d for %dth\n",
+                                    myrank, p[j],(i*(i+1))/2 + j, j);
+            }
+        }
+    }
+*/
+
+  double time = eTime - sTime;
+  double max_time;
+
+  MPI_Reduce (&time, &max_time, 1, MPI_DOUBLE, MPI_MAX, 0, MPI_COMM_WORLD);
+
+  printf ("AlltoAllv optimized %d %lf \n", myrank, eTime - sTime);
+
+  if (myrank == 0){
+          fprintf(fp,"%lf\n",max_time);
+          fprintf(stdout,"%lf\n",max_time);
+          *time_curr = max_time;
+  }
+
+  if(intra_rank==0)
+  	MPI_Comm_free(&inter_comm);
+  MPI_Comm_free(&intra_comm);
+
+
+  // Finalize
+  MPI_Finalize();
+  free(buf);
+  free(recvBuf);
+  free(countBuf);
+  free(recvCountBuf);
+  free(displBuf);
+  free(recvDisplBuf);
+
 }
 
 int main( int argc, char *argv[])
@@ -392,32 +621,34 @@ int main( int argc, char *argv[])
     int D = atoi(argv[1]); // Data Size in KBs
     int option = atoi (argv[2]); // part to run
     int optimized = atoi(argv[3]); //Optimized == 1, Default = 0
+    double time_curr = 0;
 
     if(!optimized){
 	if (option == 1)
-       		 mpi_bcast_default(D);
+       		 mpi_bcast_default(D,&time_curr);
    	else if (option == 2)
-       		 mpi_reduce_default(D);
+       		 mpi_reduce_default(D,&time_curr);
 	else if (option == 3)
-                 mpi_gather_default(D);
+                 mpi_gather_default(D,&time_curr);
 	else if (option == 4)
-                 mpi_alltoallv_default(D);
+                 mpi_alltoallv_default(D,&time_curr);
 	else
 		printf("Unsupported default option\n");
    }
    else{
        if (option == 1)
-                 mpi_bcast_optimized(D);
+                 mpi_bcast_optimized(D,&time_curr);
        else if (option == 2)
-                 mpi_reduce_optimized(D);
+                 mpi_reduce_optimized(D,&time_curr);
        else if (option == 3)
-                 mpi_gather_optimized(D);
+                 mpi_gather_optimized(D,&time_curr);
        else if (option == 4)
-                 mpi_alltoallv_optimized(D);
+                 mpi_alltoallv_optimized(D,&time_curr);
        else
                 printf("Unsupported optimized option\n");
-   }
+  
+    }
 
-    return 0;
+       return 0;
 }
 
