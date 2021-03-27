@@ -1,4 +1,4 @@
-import subprocess
+import subprocess32
 import sys
 import os
 
@@ -26,7 +26,10 @@ for line in lines:
     for node in nodes:
         status=-1
         with open(os.devnull, 'wb') as shutup:
-	    status = subprocess.call(["ssh", node, "uptime"], stdout=shutup, stderr=shutup)
+	    try:
+	        status = subprocess32.call(["ssh", node, "uptime"], stdout=shutup, stderr=shutup, timeout=10)
+            except:
+                pass
         if status == 0:
             nodes_in_this_group += 1
             reachable.append(node)

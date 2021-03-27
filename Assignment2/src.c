@@ -165,8 +165,7 @@ void mpi_gather_default(int D, double *time_curr){
 
 void mpi_alltoallv_default(int D, double *time_curr){
 	  
-  int myrank, size, count;
-  count = (D*KB)/sizeof(double);
+  int myrank, size, send_count,total_count;
   FILE *fp;
   fp = fopen("data.tmp", "w");
 
@@ -176,11 +175,14 @@ void mpi_alltoallv_default(int D, double *time_curr){
   MPI_Comm_rank(MPI_COMM_WORLD, &myrank);
   MPI_Comm_size(MPI_COMM_WORLD, &size);
 
-  double *buf = (double *)malloc(sizeof(double) * size * size);
-  double *recvBuf = (double *)malloc(sizeof(double) * size * size);
+  double *buf = (double *)malloc(D*KB*size);
+  double *recvBuf = (double *)malloc(D*KB*size);
+
+  send_count = (D*KB)/sizeof(double);
+  total_count = send_count*size;
 
   /* Load up the buffers */
-  for (int i=0; i<size*size; i++) {
+  for (int i=0; i<total_count; i++) {
       buf[i] = i + 100*myrank;
       recvBuf[i] = -i;
   }
@@ -200,10 +202,10 @@ void mpi_alltoallv_default(int D, double *time_curr){
   int *displBuf = (int *)malloc( size * sizeof(int));
 
   for (int i=0; i<size; i++) {
-      countBuf[i] = i;
-      recvCountBuf[i] = myrank;
-      recvDisplBuf[i] = i * myrank;
-      displBuf[i] = (i * (i+1))/2;
+      countBuf[i] = send_count;
+      recvCountBuf[i] = send_count;
+      recvDisplBuf[i] = i*send_count;
+      displBuf[i] = i*send_count;
   }
 
   double sTime = MPI_Wtime();
@@ -216,8 +218,8 @@ void mpi_alltoallv_default(int D, double *time_curr){
     int *p;
     for (int i=0; i<size; i++) {
         p = recvBuf + recvDisplBuf[i];
-        for (int j=0; j<myrank; j++) {
-            if (p[j] != i * 100 + (myrank*(myrank+1))/2 + j) {
+        for (int j=0; j<send_count; j++) {
+            if (p[j] != i * send_count) {
                 printf("[%d] got %d expected %d for %dth\n",
                                     myrank, p[j],(i*(i+1))/2 + j, j);
             }else{
@@ -501,8 +503,7 @@ void mpi_gather_optimized(int D, double *time_curr){
 
 void mpi_alltoallv_optimized(int D, double *time_curr){
 
-  int myrank, size, length, count;
-  count = (D*KB)/sizeof(double);
+  int myrank, size, length, send_count,total_count;
   char name[MPI_MAX_PROCESSOR_NAME];
   FILE *fp;
   fp = fopen("data.tmp", "w");
@@ -535,11 +536,13 @@ void mpi_alltoallv_optimized(int D, double *time_curr){
   else
     MPI_Comm_split(MPI_COMM_WORLD, MPI_UNDEFINED, myrank,&inter_comm);
   
-  double *buf = (double *)malloc(sizeof(double) * size * size);
-  double *recvBuf = (double *)malloc(sizeof(double) * size * size);
+  double *buf = (double *)malloc(D*KB*size);
+  double *recvBuf = (double *)malloc(D*KB*size);
+  send_count = (D*KB)/sizeof(double);
+  total_count=send_count*size;
 
   /* Load up the buffers */
-  for (int i=0; i<size*size; i++) {
+  for (int i=0; i<total_count; i++) {
       buf[i] = i + 100*myrank;
       recvBuf[i] = -i;
   }
@@ -559,10 +562,10 @@ void mpi_alltoallv_optimized(int D, double *time_curr){
   int *displBuf = (int *)malloc(size * sizeof(int));
 
   for (int i=0; i<size; i++) {
-      countBuf[i] = i;
-      recvCountBuf[i] = myrank;
-      recvDisplBuf[i] = i * myrank;
-      displBuf[i] = (i * (i+1))/2;
+      countBuf[i] = send_count;
+      recvCountBuf[i] = send_count;
+      recvDisplBuf[i] = i*send_count;
+      displBuf[i] = i*send_count;
   }
 
   double sTime = MPI_Wtime();
@@ -570,7 +573,7 @@ void mpi_alltoallv_optimized(int D, double *time_curr){
                        recvBuf, recvCountBuf, recvDisplBuf, MPI_DOUBLE, MPI_COMM_WORLD);
   double eTime = MPI_Wtime();
 
-  /* Check recvBuf
+/* // Check recvBuf
     int *p;
     for (int i=0; i<size; i++) {
         p = recvBuf + recvDisplBuf[i];
