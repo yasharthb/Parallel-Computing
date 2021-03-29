@@ -47,7 +47,7 @@ void mpi_bcast_default(int D, double *time_curr){
   // Initialize buffer to random values
   srand(time(NULL));
   double high = 2021.0;
-  for (int i=1; i<=count; i++)
+  for (int i=0; i<count; i++)
      buf[i] = (high*(double)rand())/(double)RAND_MAX;
 
   // has to be called by all processes
@@ -90,7 +90,7 @@ void mpi_reduce_default(int D, double *time_curr){
   // Initialize buffer to random values
   srand(time(NULL));
   double high = 2021.0;
-  for (int i=1; i<=count; i++)
+  for (int i=0; i<count; i++)
      buf[i] = (high*(double)rand())/(double)RAND_MAX;
  
   double sTime = MPI_Wtime();
@@ -134,7 +134,7 @@ void mpi_gather_default(int D, double *time_curr){
   // Initialize buffer to random values
   srand(time(NULL));
   double high = 2021.0;
-  for (int i=1; i<=count; i++)
+  for (int i=0; i<count; i++)
      buf[i] = (high*(double)rand())/(double)RAND_MAX;
 
   double *recvBuf = (double *)malloc(D*KB*size); //significant at the root process
@@ -191,7 +191,7 @@ void mpi_alltoallv_default(int D, double *time_curr){
   // Initialize buffer to random values
   srand(time(NULL));
   double high = 2021.0;
-  for (int i=1; i<=count; i++)
+  for (int i=0; i<count; i++)
      buf[i] = (high*(double)rand())/(double)RAND_MAX;
 */
 
@@ -309,7 +309,7 @@ void mpi_bcast_optimized(int D, double *time_curr){
   // Initialize buffer to random values
   srand(time(NULL));
   double high = 2021.0;
-  for (int i=1; i<=count; i++)
+  for (int i=0; i<count; i++)
      buf[i] = (high*(double)rand())/(double)RAND_MAX;
 
   // has to be called by all processes
@@ -391,7 +391,7 @@ void mpi_reduce_optimized(int D, double *time_curr){
   // Initialize buffer to random values
   srand(time(NULL));
   double high = 2021.0;
-  for (int i=1; i<=count; i++)
+  for (int i=0; i<count; i++)
      buf[i] = (high*(double)rand())/(double)RAND_MAX;
 
   // has to be called by all processes
@@ -443,6 +443,10 @@ void mpi_gather_optimized(int D, double *time_curr){
   MPI_Comm_size( MPI_COMM_WORLD, &size);
   MPI_Get_processor_name(name, &length); //Used to later to identify the group to which the node belongs 
 
+  srand(time(NULL));
+  double high = 2021.0;
+  for (int i=0; i<count; i++)
+     buf[i] = (high*(double)rand())/(double)RAND_MAX;
 
   // Creating Intra Groups for all set of nodes in action
   int intra_color = get_group_id(name,length);
@@ -528,16 +532,13 @@ void mpi_alltoallv_optimized(int D, double *time_curr){
   int inter_rank, inter_size;
 
   MPI_Comm inter_comm;
-  if(intra_rank == 0){
-    MPI_Comm_split(MPI_COMM_WORLD, inter_color, myrank, &inter_comm);
-    MPI_Comm_rank(inter_comm,&inter_rank);
-    MPI_Comm_size(inter_comm,&inter_size);
-  }
-  else
-    MPI_Comm_split(MPI_COMM_WORLD, MPI_UNDEFINED, myrank,&inter_comm);
-  
+  MPI_Comm_split(MPI_COMM_WORLD, intra_rank, myrank, &inter_comm);
+  MPI_Comm_rank(inter_comm,&inter_rank);
+  MPI_Comm_size(inter_comm,&inter_size);
+
   double *buf = (double *)malloc(D*KB*size);
-  double *recvBuf = (double *)malloc(D*KB*size);
+  double *recvBuf = (double *)malloc(D*KB*intra_size);
+  double *recvBuf2 = (double *)malloc(D*KB*size);
   send_count = (D*KB)/sizeof(double);
   total_count=send_count*size;
 
@@ -556,24 +557,29 @@ void mpi_alltoallv_optimized(int D, double *time_curr){
 */
 
 
-  int *countBuf = (int *)malloc(size * sizeof(int));
-  int *recvCountBuf = (int *)malloc(size * sizeof(int));
-  int *recvDisplBuf = (int *)malloc(size * sizeof(int));
-  int *displBuf = (int *)malloc(size * sizeof(int));
+  int *countBuf = (int *)malloc(intra_size * sizeof(int));
+  int *recvCountBuf = (int *)malloc(intra_size * sizeof(int));
+  int *recvDisplBuf = (int *)malloc(intra_size * sizeof(int));
+  int *displBuf = (int *)malloc(intra_size * sizeof(int));
 
-  for (int i=0; i<size; i++) {
+  for (int i=0; i<intra_size; i++) {
       countBuf[i] = send_count;
       recvCountBuf[i] = send_count;
       recvDisplBuf[i] = i*send_count;
       displBuf[i] = i*send_count;
-  }
+   }
 
   double sTime = MPI_Wtime();
-  MPI_Alltoallv( buf, countBuf, displBuf, MPI_DOUBLE,
-                       recvBuf, recvCountBuf, recvDisplBuf, MPI_DOUBLE, MPI_COMM_WORLD);
+  for(int rank=0; rank < size; rank++){
+    MPI_Gather(buf+rank*send_count, send_count, MPI_DOUBLE, recvBuf, send_count, MPI_DOUBLE, rank%intra_size, intra_comm);
+   // MPI_Barrier(intra_comm);
+    if(intra_rank == rank%intra_size);
+    	MPI_Gather(recvBuf, send_count*intra_size, MPI_DOUBLE, recvBuf2, send_count*intra_size, MPI_DOUBLE, rank/intra_size, inter_comm);
+  //  MPI_Barrier(inter_comm);
+  }
   double eTime = MPI_Wtime();
 
-/* // Check recvBuf
+/*  // Check recvBuf
     int *p;
     for (int i=0; i<size; i++) {
         p = recvBuf + recvDisplBuf[i];
@@ -602,8 +608,7 @@ void mpi_alltoallv_optimized(int D, double *time_curr){
           *time_curr = max_time;
   }
 
-  if(intra_rank==0)
-  	MPI_Comm_free(&inter_comm);
+  MPI_Comm_free(&inter_comm);
   MPI_Comm_free(&intra_comm);
 
 
