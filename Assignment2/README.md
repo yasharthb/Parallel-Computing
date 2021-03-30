@@ -63,7 +63,19 @@ Files created in this process include `code`(executable for src.c), `hostfile`, 
 
 
 ## Optimizations
-* MPI_Bcast
+Our optimizations work by reducing the number of inter-switch or inter-group calls made by processes. For achieving this, in the optimized code for each collective, we create two times of communicators. The **intra_group** communicator includes the processes of the same group. The **inter_group** communicator includes the first process of each group (rank 0 of each intra_group communicator). Using this we describe the collective calls made to achieve the same functionality as the default MPI collective call.
+
+* **MPI_Bcast** <br>
+MPI_Bcast is first called by the first process of each group using the inter_group communicator. This is followed by a MPI_Bcast call by all processes using the intra_group communicator.
+
+* **MPI_Reduce** <br>
+MPI_Reduce is first called by all processes using the intra_group communicator. This is followed by a MPI_Reduce call by the process of each group using the inter_group communicator.
+
+* **MPI_Gather** <br>
+MPI_Gather is first called by all processes using the intra_group communicator. This is followed by a MPI_Gather call by the process of each group using the inter_group communicator.
+
+* **MPI_Alltoallv** <br>
+In this, we create additional inter_group communicators for other ranks of each group. This means there is an inter_group containing rank 0 of each group, rank 1 of each group and so on. We accumulate the data at each rank from all other ranks using MPI_Gatherv calls. For getting the data at any rank (intra_rank corresponding to intra_group communicator = r), there is a MPI_Gatherv call using intra_comm, with the root node as r. This is followed by an MPI_Gatherv call by all processes with intra_rank r using the corresponding inter_group communicator to send the data to the desired rank.
 
 
 
