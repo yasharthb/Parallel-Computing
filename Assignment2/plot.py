@@ -18,7 +18,7 @@ for option in [1,2,3,4]:
     demo_input_format = pd.read_csv("data_{0}.csv".format(option))
     demo_input_format["(P, ppn)"] = list(map(lambda x, y: ("(" + x + ", " + y + ")"), map(str, demo_input_format["P"]), map(str, demo_input_format["ppn"])))
     print(demo_input_format)
-    sns.catplot(x="(P, ppn)", y="time", data=demo_input_format, kind="box", col="D", hue="mode")
+    sns.catplot(x="(P, ppn)", y="time", data=demo_input_format, kind="box", col="D", hue="mode", sharey=False)
     #plt.show()
     plt.savefig("plot_{0}.jpg".format(option))
 #demo_input_format = pd.DataFrame.from_dict({
