@@ -62,7 +62,7 @@ void mpi_bcast_default(int D, double *time_curr){
   MPI_Reduce (&time, &max_time, 1, MPI_DOUBLE, MPI_MAX, 0, MPI_COMM_WORLD);
 
   // simple check
-  printf ("bcast default %d %lf \n", myrank, eTime - sTime);
+//  printf ("bcast default %d %lf \n", myrank, eTime - sTime);
 
   if (myrank == 0){
 	  fprintf(fp,"%lf\n",max_time);
@@ -104,7 +104,7 @@ void mpi_reduce_default(int D, double *time_curr){
   MPI_Reduce (&time, &max_time, 1, MPI_DOUBLE, MPI_MAX, 0, MPI_COMM_WORLD);
 
   // simple check
-  printf ("reduce default %d %lf \n", myrank, eTime - sTime);
+ // printf ("reduce default %d %lf \n", myrank, eTime - sTime);
 
   if (myrank == 0){
           fprintf(fp,"%lf\n",max_time);
@@ -150,7 +150,7 @@ void mpi_gather_default(int D, double *time_curr){
   MPI_Reduce (&time, &max_time, 1, MPI_DOUBLE, MPI_MAX, 0, MPI_COMM_WORLD);
 
   // simple check
-  printf ("gather default %d %lf \n", myrank, eTime - sTime);
+ // printf ("gather default %d %lf \n", myrank, eTime - sTime);
 
   if (myrank == 0){
           fprintf(fp,"%lf\n",max_time);
@@ -183,19 +183,12 @@ void mpi_alltoallv_default(int D, double *time_curr){
   total_count = send_count*size;
 
   /* Load up the buffers */
-  for (int i=0; i<total_count; i++) {
-      buf[i] = i + 100*myrank;
-      recvBuf[i] = -i;
-  }
-
-/*
-  // Initialize buffer to random values
   srand(time(NULL));
   double high = 2021.0;
-  for (int i=0; i<count; i++)
-     buf[i] = (high*(double)rand())/(double)RAND_MAX;
-*/
-
+  for (int i=0; i<total_count; i++) {
+      buf[i] = (high*(double)rand())/(double)RAND_MAX;
+      recvBuf[i] = -i;
+  }
 
   int *countBuf = (int *)malloc( size * sizeof(int));
   int *recvCountBuf = (int *)malloc( size * sizeof(int));
@@ -236,7 +229,7 @@ void mpi_alltoallv_default(int D, double *time_curr){
 
   MPI_Reduce (&time, &max_time, 1, MPI_DOUBLE, MPI_MAX, 0, MPI_COMM_WORLD);
 
-  printf ("AlltoAllv default %d %lf \n", myrank, eTime - sTime);
+ // printf ("AlltoAllv default %d %lf \n", myrank, eTime - sTime);
 
   if (myrank == 0){
           fprintf(fp,"%lf\n",max_time);
@@ -326,7 +319,7 @@ void mpi_bcast_optimized(int D, double *time_curr){
   MPI_Reduce (&time, &max_time, 1, MPI_DOUBLE, MPI_MAX, 0, MPI_COMM_WORLD);
 
   // simple check
-  printf ("bcast optmized %d %lf \n", myrank, eTime - sTime);
+  //printf ("bcast optmized %d %lf \n", myrank, eTime - sTime);
 
   if (myrank == 0){
           fprintf(fp,"%lf\n",max_time);
@@ -408,7 +401,7 @@ void mpi_reduce_optimized(int D, double *time_curr){
   MPI_Reduce (&time, &max_time, 1, MPI_DOUBLE, MPI_MAX, 0, MPI_COMM_WORLD);
 
   // simple check
-  printf ("reduce optimized %d %lf \n", myrank, eTime - sTime);
+  //printf ("reduce optimized %d %lf \n", myrank, eTime - sTime);
 
   if (myrank == 0){
           fprintf(fp,"%lf\n",max_time);
@@ -488,7 +481,7 @@ void mpi_gather_optimized(int D, double *time_curr){
   MPI_Reduce (&time, &max_time, 1, MPI_DOUBLE, MPI_MAX, 0, MPI_COMM_WORLD);
 
    // simple check
-  printf ("gather optimized %d %lf \n", myrank, eTime - sTime);
+  //printf ("gather optimized %d %lf \n", myrank, eTime - sTime);
 
   if (myrank == 0){
           fprintf(fp,"%lf\n",max_time);
@@ -546,19 +539,12 @@ void mpi_alltoallv_optimized(int D, double *time_curr){
   total_count=send_count*size;
 
   /* Load up the buffers */
-  for (int i=0; i<total_count; i++) {
-      buf[i] = i + 100*myrank;
-      recvBuf2[i] = 0;
-  }
-
-/*
-  // Initialize buffer to random values
   srand(time(NULL));
   double high = 2021.0;
-  for (int i=1; i<=count; i++)
-     buf[i] = (high*(double)rand())/(double)RAND_MAX;
-*/
-
+  for (int i=0; i<total_count; i++) {
+      buf[i] = (high*(double)rand())/(double)RAND_MAX;
+      recvBuf2[i] = 0;
+  }
 
   int *countBuf = (int *)malloc(intra_size * sizeof(int));
   int *recvCountBuf = (int *)malloc(intra_size * sizeof(int));
@@ -604,7 +590,7 @@ void mpi_alltoallv_optimized(int D, double *time_curr){
 
   MPI_Reduce (&time, &max_time, 1, MPI_DOUBLE, MPI_MAX, 0, MPI_COMM_WORLD);
 
-  printf ("AlltoAllv optimized %d %lf \n", myrank, eTime - sTime);
+  //printf ("AlltoAllv optimized %d %lf \n", myrank, eTime - sTime);
 
   if (myrank == 0){
           fprintf(fp,"%lf\n",max_time);

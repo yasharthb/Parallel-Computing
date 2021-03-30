@@ -6,7 +6,7 @@ make clean
 make
 
 touch data.tmp> /dev/null 2>&1
-for j in {1..3}
+for j in {1..4}
 do
   rm "data_${j}.csv" > /dev/null 2>&1
   touch "data_${j}.csv"
@@ -55,4 +55,9 @@ done
 rm data.tmp > /dev/null 2>&1
 echo "All configurations done! Generating plots"
 python plot.py
+mv plot_1.jpg plot_Bcast.jpg
+mv plot_2.jpg plot_Reduce.jpg
+mv plot_3.jpg plot_Gather.jpg
+mv plot_4.jpg plot_Alltoallv.jpg
 echo "Plots generated! Exiting"
+
