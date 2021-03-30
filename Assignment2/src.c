@@ -14,6 +14,7 @@ int get_group_id(char *name, int length){
     char  line[255];
     int line_no = -1;
     fp = fopen("nodefile.txt" , "r");
+    length = length > 7 ? 7 : length;
     while (fgets(line, sizeof(line), fp) != NULL)
     { 
         line_no++; 
@@ -516,6 +517,7 @@ void mpi_alltoallv_optimized(int D, double *time_curr){
   MPI_Init(NULL, NULL);
   MPI_Comm_rank(MPI_COMM_WORLD, &myrank);
   MPI_Comm_size(MPI_COMM_WORLD, &size);
+  MPI_Get_processor_name(name, &length); //Used to later to identify the group to which the node belongs 
 
   // Creating Intra Groups for all set of nodes in action
   int intra_color = get_group_id(name,length);
@@ -527,12 +529,13 @@ void mpi_alltoallv_optimized(int D, double *time_curr){
   MPI_Comm_rank(intra_comm,&intra_rank);
   MPI_Comm_size(intra_comm,&intra_size);
 
+  //printf("My rank=%d, Node= %s, intra_color=%d, intra_rank=%d, intra_size=%d\n",myrank,name,intra_color,intra_rank,intra_size);
   // Creating an inter group communication picking the 0th ranked element in each intra group
-  int inter_color = 0;
+  int inter_color = intra_rank;
   int inter_rank, inter_size;
 
   MPI_Comm inter_comm;
-  MPI_Comm_split(MPI_COMM_WORLD, intra_rank, myrank, &inter_comm);
+  MPI_Comm_split(MPI_COMM_WORLD, inter_color, myrank, &inter_comm);
   MPI_Comm_rank(inter_comm,&inter_rank);
   MPI_Comm_size(inter_comm,&inter_size);
 
@@ -545,7 +548,7 @@ void mpi_alltoallv_optimized(int D, double *time_curr){
   /* Load up the buffers */
   for (int i=0; i<total_count; i++) {
       buf[i] = i + 100*myrank;
-      recvBuf[i] = -i;
+      recvBuf2[i] = 0;
   }
 
 /*
@@ -562,6 +565,12 @@ void mpi_alltoallv_optimized(int D, double *time_curr){
   int *recvDisplBuf = (int *)malloc(intra_size * sizeof(int));
   int *displBuf = (int *)malloc(intra_size * sizeof(int));
 
+  int *interCountBuf = (int *)malloc(inter_size * sizeof(int));
+  int *interRecvCountBuf = (int *)malloc(inter_size * sizeof(int));
+  int *interRecvDisplBuf = (int *)malloc(inter_size * sizeof(int));
+  int *interDisplBuf = (int *)malloc(inter_size * sizeof(int));
+
+
   for (int i=0; i<intra_size; i++) {
       countBuf[i] = send_count;
       recvCountBuf[i] = send_count;
@@ -569,31 +578,26 @@ void mpi_alltoallv_optimized(int D, double *time_curr){
       displBuf[i] = i*send_count;
    }
 
+  for (int i=0; i<inter_size; i++) {
+      interCountBuf[i] = send_count*intra_size;
+      interRecvCountBuf[i] = send_count*intra_size;
+      interRecvDisplBuf[i] = i*send_count*intra_size;
+      interDisplBuf[i] = i*send_count*intra_size;
+   }
+// MPI_Barrier(MPI_COMM_WORLD);
+// printf("Size=%d IntraSize=%d InterSize=%d\n",size,intra_size,inter_size);
   double sTime = MPI_Wtime();
   for(int rank=0; rank < size; rank++){
-    MPI_Gather(buf+rank*send_count, send_count, MPI_DOUBLE, recvBuf, send_count, MPI_DOUBLE, rank%intra_size, intra_comm);
-   // MPI_Barrier(intra_comm);
-    if(intra_rank == rank%intra_size);
-    	MPI_Gather(recvBuf, send_count*intra_size, MPI_DOUBLE, recvBuf2, send_count*intra_size, MPI_DOUBLE, rank/intra_size, inter_comm);
-  //  MPI_Barrier(inter_comm);
+    MPI_Gatherv(buf+(rank*send_count), send_count, MPI_DOUBLE, recvBuf, recvCountBuf, recvDisplBuf, MPI_DOUBLE, rank%intra_size, intra_comm);
+  // printf("Hello my rank is %d\n",myrank);
+   // MPI_Barrier(MPI_COMM_WORLD);
+    if(intra_rank == rank%intra_size)
+    	MPI_Gatherv(recvBuf, send_count*intra_size, MPI_DOUBLE, recvBuf2, interRecvCountBuf, interRecvDisplBuf, MPI_DOUBLE, rank/intra_size, inter_comm);
+  //  printf("Hello Again my rank is %d\n",myrank);
+   // MPI_Barrier(MPI_COMM_WORLD);
   }
   double eTime = MPI_Wtime();
 
-/*  // Check recvBuf
-    int *p;
-    for (int i=0; i<size; i++) {
-        p = recvBuf + recvDisplBuf[i];
-        for (int j=0; j<myrank; j++) {
-            if (p[j] != i * 100 + (myrank*(myrank+1))/2 + j) {
-                printf("[%d] got %d expected %d for %dth\n",
-                                    myrank, p[j],(i*(i+1))/2 + j, j);
-            }else{
-                printf("[%d] got %d expected %d for %dth\n",
-                                    myrank, p[j],(i*(i+1))/2 + j, j);
-            }
-        }
-    }
-*/
 
   double time = eTime - sTime;
   double max_time;
@@ -620,6 +624,12 @@ void mpi_alltoallv_optimized(int D, double *time_curr){
   free(recvCountBuf);
   free(displBuf);
   free(recvDisplBuf);
+  free(recvBuf2);
+  free(interCountBuf);
+  free(interRecvCountBuf);
+  free(interDisplBuf);
+  free(interRecvDisplBuf);
+
 
 }
 
