@@ -89,7 +89,7 @@ For all configurations, we observe better or similar performance using our optim
 For most configurations, we do not achieve any improvement and the performance of the modified Alltoallv is worse than the default call. This shows that the library algorithm for MPI_AlltoAllv performs better than mutiple MPI_Gatherv calls for each rank. 
 
 ## Issues faced
-The number of configurations and executions for each requires a long time to run. Due to network uncertainities, such as nodes becoming unreachable during the script execution, can cause the script to get stuck. Hence, to collect the complete data, we needed to run the main script (run.sh) multiple times.
+The number of configurations and executions for each requires a long time to run. Network uncertainities, such as nodes becoming unreachable during the script execution, can cause the script to get stuck. Hence, to collect the complete data, we needed to run the main script (run.sh) multiple times.
 
 ### Box Plots
 
