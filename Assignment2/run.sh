@@ -6,28 +6,28 @@ make clean
 make
 
 touch data.tmp> /dev/null 2>&1
-#for j in {1..3}
-#do
-#  rm "data_${j}.csv" > /dev/null 2>&1
-#  touch "data_${j}.csv"
-#  printf "D,P,ppn,mode,time\n" >> "data_${j}.csv"
-#done
-for execution in {1..9}
+for j in {1..3}
 do
-   for P in 4 16
+  rm "data_${j}.csv" > /dev/null 2>&1
+  touch "data_${j}.csv"
+  printf "D,P,ppn,mode,time\n" >> "data_${j}.csv"
+done
+for execution in {1..10}
+do
+   for P in 16
    do
-      for ppn in 1 8
+      for ppn in 8
       do
 	 for D in 16 256 2048
          do
-	    for option in {1..3}
+	    for option in {1..4}
             do
                 echo "Generating fresh hostfile...."
 		python script.py 4 $((P/4)) $ppn
                 sum_d=0.0
                 sum_o=0.0
                 tmp=0.0
-                N=5
+                N=2
                 data_file="data_${option}.csv"
                 for i in {1..5}
                 do
