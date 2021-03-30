@@ -58,7 +58,9 @@ Files created in this process include `code`(executable for src.c), `hostfile`, 
 
 
 ## Optimizations
-Our optimizations work by reducing the number of inter-switch or inter-group calls made by processes. For achieving this, in the optimized code for each collective, we create two times of communicators. The **intra_group** communicator includes the processes of the same group. The **inter_group** communicator includes the first process of each group (rank 0 of each intra_group communicator). Using this we describe the collective calls made to achieve the same functionality as the default MPI collective call.
+Our optimizations work by reducing the number of inter-switch or inter-group calls made by processes. Reducing inter-switch communication improves performance since the distance is reduced. Further there is usually lower congestion on lower-level switches, since the higher level switches will be used by mutiple applications running on the cluster/network.
+
+For achieving this, in the optimized code for each collective, we create two times of communicators. The **intra_group** communicator includes the processes of the same group. The **inter_group** communicator includes the first process of each group (rank 0 of each intra_group communicator). Using this we describe the collective calls made to achieve the same functionality as the default MPI collective call.
 
 * **MPI_Bcast** <br>
 MPI_Bcast is first called by the first process of each group using the inter_group communicator. This is followed by a MPI_Bcast call by all processes using the intra_group communicator.
@@ -75,13 +77,20 @@ In this, we create additional inter_group communicators for other ranks of each 
 ## Observations
 
 * **MPI_Bcast** <br>
+For all configurations, we observe better or similar performance using our optimized MPI_Bcast as opposed to the default call. 
+
 * **MPI_Reduce** <br>
+For most configurations, we observe better or similar performance using our optimized MPI_Bcast as opposed to the default call. For some configurations (like D=256, P=16, ppn=1), we observe slightly higher average time as compared to default, but there is also high variation in the timings for these configurations. Hence, the performance degradation may also have been due to external issues such as high network traffic at that time.
+
 * **MPI_Gather** <br>
+For all configurations, we observe better or similar performance using our optimized MPI_Gather as opposed to the default call.
+
 * **MPI_Alltoallv** <br>
+For most configurations, we do not achieve any improvement and the performance of the modified Alltoallv is worse than the default call. This shows that the library algorithm for MPI_AlltoAllv performs better than mutiple MPI_Gatherv calls for each rank. 
 
 ### Box Plots
 
-![MPI_BCast](plot_1.jpg)
-![MPI_Reduce](plot_2.jpg)
-![MPI_Gather](plot_3.jpg)
-![MPI_AlltoAllv](plot_4.jpg)
+![MPI_BCast](plot_Bcast.jpg)
+![MPI_Reduce](plot_Reduce.jpg)
+![MPI_Gather](plot_Gather.jpg)
+![MPI_AlltoAllv](plot_Alltoallv.jpg)
