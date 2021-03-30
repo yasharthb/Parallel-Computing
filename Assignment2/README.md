@@ -9,14 +9,9 @@ Following is a list of the files and possible options in them :
 
 * **src.c(code)** <br>
 	Main communication/computation script: It branches out from main() using the option and optimization argument from the command line.<br>
-	The general structure of each branched out function is:
-	-	Random initialization of a matrix per process.
-	-	Communication using non-blocking calls Isend/Irecv and branch specific methods.
-	-	Computation on inner elements of each matrix (which do not need any elements from neighboring processes).
-	-	Waitall while all communication (send/receives) finish.
-	-	Case specific computation of halo elements using received elements from neighboring processes.
-	-	Back to communication step when in a time step loop.
-	-   We report the total time spent in communication and computation for all the time steps
+	There are two types of functions corresponding to each collective:
+	- default: This function executes the default MPI collective.
+	- optimized: This function executes the modified implemenation of the MPI collective which we propose to obtain performance improvements. The optimizations and changes made are explained [below](#Optimizations)
 
 ```sh
 	mpirun -np P -f hostfile ./code D option optimized   
