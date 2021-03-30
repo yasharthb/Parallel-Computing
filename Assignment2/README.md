@@ -62,7 +62,8 @@ Following is a list of the files and possible options in them :
 Files created in this process include `code`(executable for src.c), `hostfile`, `data*.txt` & `plot*.png` .
 
 
-## Observations
+## Optimizations
+* MPI_Bcast
 
 
 
