@@ -23,7 +23,7 @@ Following is a list of the files and possible options in them :
 * **Makefile**
 
 ```sh
-	make        # Builds the executable for src.c named halo
+	make        # Builds the executable for src.c named code
 	make clean  # Removes the executables binaries created in the make process. 
 ```
 
@@ -77,7 +77,7 @@ In this, we create additional inter_group communicators for other ranks of each 
 ## Observations
 
 * **MPI_Bcast** <br>
-For all configurations, we observe better or similar performance using our optimized MPI_Bcast as opposed to the default call. 
+For all configurations, we observe better or similar performance using our optimized MPI_Bcast as opposed to the default call.
 
 * **MPI_Reduce** <br>
 For most configurations, we observe better or similar performance using our optimized MPI_Bcast as opposed to the default call. For some configurations (like D=256, P=16, ppn=1), we observe slightly higher average time as compared to default, but there is also high variation in the timings for these configurations. Hence, the performance degradation may also have been due to external issues such as high network traffic at that time.
@@ -88,12 +88,20 @@ For all configurations, we observe better or similar performance using our optim
 * **MPI_Alltoallv** <br>
 For most configurations, we do not achieve any improvement and the performance of the modified Alltoallv is worse than the default call. This shows that the library algorithm for MPI_AlltoAllv performs better than mutiple MPI_Gatherv calls for each rank. 
 
+Overall, we observe that for MPI_BCast, MPI_Reduce, and MPI_Gather, the modified implementations perform better than the default. This shows that reducing the number of inter-switch MPI calls made by processes can improve performance since inter-switch communication is more costly due to higher distance between nodes and more network congestion. For MPI_AlltoAllv, the modified implementation performs worse than the default. This maybe due to increase number of MPI calls from each rank which outweigh the improvement from combining the calls made by processes on the same node.
+
 ## Issues faced
 The number of configurations and executions for each requires a long time to run. Network uncertainities, such as nodes becoming unreachable during the script execution, can cause the script to get stuck. Hence, to collect the complete data, we needed to run the main script (run.sh) multiple times.
 
 ### Box Plots
-
+* **MPI_Bcast** <br>
 ![MPI_BCast](plot_Bcast.jpg)
+
+* **MPI_Reduce** <br>
 ![MPI_Reduce](plot_Reduce.jpg)
+
+* **MPI_Gather** <br>
 ![MPI_Gather](plot_Gather.jpg)
+
+* **MPI_Alltoallv** <br>
 ![MPI_AlltoAllv](plot_Alltoallv.jpg)
