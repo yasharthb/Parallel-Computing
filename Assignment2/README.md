@@ -8,16 +8,16 @@ We have tried our best to adhere to all the naming conventions as described in t
 Following is a list of the files and possible options in them :
 
 * **src.c(code)** <br>
-	Main communication/computation script: It branches out from main() using the option and optimization argument from the command line.<br>
+	Main communication script: It branches out from main() using the option and optimization argument from the command line.<br>
 	There are two types of functions corresponding to each collective:
 	- default: This function executes the default MPI collective.
 	- optimized: This function executes the modified implemenation of the MPI collective which we propose to obtain performance improvements. The optimizations and changes made are explained [below](#Optimizations).
 
 ```sh
 	mpirun -np P -f hostfile ./code D option optimized   
-                #P is the number of processes, D is the data size for communication
-				#option is a value{1,2,3,4} which branches for various collectives covered.
-                #  optimized is a value {0,1} which selects whether to run the default collective or the optimized version 
+            #P is the number of processes, D is the data size for communication.
+			#option is a value{1,2,3,4} which branches for various collectives covered.
+            #optimized is a value {0,1} which selects whether to run the default collective or the optimized version.
 ```
 
 * **Makefile**
