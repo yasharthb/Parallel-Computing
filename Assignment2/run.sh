@@ -14,9 +14,9 @@ do
 done
 for execution in {1..10}
 do
-   for P in 16
+   for P in 4 16
    do
-      for ppn in 8
+      for ppn in 1 8
       do
 	 for D in 16 256 2048
          do
@@ -27,7 +27,7 @@ do
                 sum_d=0.0
                 sum_o=0.0
                 tmp=0.0
-                N=2
+                N=5
                 data_file="data_${option}.csv"
                 for i in {1..5}
                 do
