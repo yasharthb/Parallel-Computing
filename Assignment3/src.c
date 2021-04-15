@@ -131,16 +131,29 @@ int main( int argc, char *argv[])
         procmin[yr] = mintemp;
     }
 
-    //MPI_Reduce to get yearwise min on process
+    //MPI_Reduce to get yearwise min on process 0
     double* yearmin = (double*)malloc(sizeof(double)*ncol); // Stores the yearwise min after reduce call
     MPI_Reduce(procmin, yearmin, ncol, MPI_DOUBLE, MPI_MIN, 0, MPI_COMM_WORLD);
 
-    if (!rank)
+    if (!rank){
         for (int i=0; i<ncol; i++)
             printf("%lf ", yearmin[i]);
+        printf("\n");
+    }
+
+    //Global minimum
+    if (!rank){
+        double globalmin = DBL_MAX;
+        for (int yr=0; yr<ncol; yr++)
+            globalmin = MIN(globalmin, yearmin[yr]);
+        printf("%lf\n", globalmin);
+    }
+
     double time = MPI_Wtime()-stime;
     double maxtime;
     MPI_Reduce (&time, &maxtime, 1, MPI_DOUBLE, MPI_MAX, 0, MPI_COMM_WORLD);
+    if (!rank)
+        printf("%lf\n", maxtime);
 
     MPI_Finalize();
     return 0;
