@@ -23,6 +23,12 @@ int main( int argc, char *argv[])
     strcpy(filename, argv[1]); 
     FILE *fp = fopen(filename, "r");
     
+    FILE *fp_out;
+    fp_out = fopen("output.txt", "w");
+ 
+    FILE *fp_dat;
+    fp_dat = fopen("data.tmp", "w");
+
     MPI_Init(&argc, &argv);
     int rank, size;
     MPI_Comm_rank( MPI_COMM_WORLD, &rank);
@@ -137,8 +143,8 @@ int main( int argc, char *argv[])
 
     if (!rank){
         for (int i=0; i<ncol; i++)
-            printf("%lf ", yearmin[i]);
-        printf("\n");
+            fprintf(fp_out, "%lf,", yearmin[i]);
+        fprintf(fp_out, "\n");
     }
 
     //Global minimum
@@ -146,14 +152,16 @@ int main( int argc, char *argv[])
         double globalmin = DBL_MAX;
         for (int yr=0; yr<ncol; yr++)
             globalmin = MIN(globalmin, yearmin[yr]);
-        printf("%lf\n", globalmin);
+        fprintf(fp_out, "%lf\n", globalmin);
     }
 
     double time = MPI_Wtime()-stime;
     double maxtime;
     MPI_Reduce (&time, &maxtime, 1, MPI_DOUBLE, MPI_MAX, 0, MPI_COMM_WORLD);
-    if (!rank)
-        printf("%lf\n", maxtime);
+    if (!rank){
+	fprintf(fp_dat," %lf\n", maxtime);    
+        fprintf(fp_out, "%lf\n", maxtime);
+    }
 
     MPI_Finalize();
     return 0;

@@ -5,16 +5,29 @@
 make clean
 make
 
+
+data_file="data.csv"
+
 rm "output.txt" > /dev/null 2>&1
-touch "data_${j}.csv"
+touch "output.txt"
+rm $data_file > /dev/null 2>&1
+touch $data_file
+rm "data.tmp" > /dev/null 2>&1
+touch "data.tmp"
 
 for P in 1 2
   do
     for ppn in 1 2 4
       do
+	tmp=0.0
+	printf "Running Configuration: P=%d, PPN=%d\n" $P $ppn 
         python script.py 1 $P $ppn
-        mpicc -np $((P*ppn)) -f hostfile ./code "tdata.csv"
+        mpirun -np $((P*ppn)) -ppn $ppn -f hostfile ./code "tdata.csv"
+	tmp=$(<data.tmp)
+	printf "%d, %d, %.6lf\n" $P $ppn $tmp >>$data_file
     done
 done
 
+rm "data.tmp" > /dev/null 2>&1
+#python plot.py
 echo "All configurations done! Generating plots"
