@@ -49,13 +49,18 @@ Ts_2 = np.median(opt2[0])
 
 su_1 =[[Ts_1/time  for time in times] for times in opt1]
 su_2 =[[Ts_2/time  for time in times] for times in opt2]
+su_3 =[[Ts_1/time  for time in times] for times in opt2]
 
 plt.figure()
 plt.plot(range(1,len(N)+1), np.array([np.median(times) for times in su_1]),color = colors[0], label=part[0])
 plt.boxplot(su_1, labels = N, medianprops = {'color':colors[0]}, boxprops = dict(color=colors[0]))
 
-plt.plot(range(1,len(N)+1), np.array([np.median(times) for times in su_2]),color = colors[1], label=part[1])
+plt.plot(range(1,len(N)+1), np.array([np.median(times) for times in su_2]),color = colors[1], label="P=2 wrt base: P=2,PPN=1")
 plt.boxplot(su_2, labels = N, medianprops = {'color':colors[1]}, boxprops = dict(color=colors[1]))
+
+plt.plot(range(1,len(N)+1), np.array([np.median(times) for times in su_3]),color = colors[1], label="P=2 wrt base: P=1,PPN=1")
+plt.boxplot(su_3, labels = N, medianprops = {'color':'g'}, boxprops = dict(color='g'))
+
 
 plt.legend()
 plt.xlabel('Processes per Node(PPN)')
