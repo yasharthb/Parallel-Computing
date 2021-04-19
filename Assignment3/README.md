@@ -81,6 +81,6 @@ The conclusion being that with computation size as needed in the file provided, 
 * **Time Consumed vs PPN** <br>
 ![Time vs PPN](plot_1.jpg)
 * **Speed Up** <br>
-![Speed Up](plot_2.jpg
+![Speed Up](plot_2.jpg)
 
 
