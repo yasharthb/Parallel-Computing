@@ -33,7 +33,7 @@ Following is a list of the files and possible options in them :
 *	**script.py**<br>
 	The helper script provided to generate the hostfile.
 
-*	**plot.py**<br>
+*	**plot_1/2.py**<br>
 	The helper plotting script provided: Uses `data.csv` file to generate the required plots.
 
 *	**run.sh**<br>
@@ -78,7 +78,9 @@ Any Scaling Up is not evident from the Box plot. We observe that the configurati
 The conclusion being that with computation size as needed in the file provided, any scaling up if possible is outshadowed by the communication overheads. When the computation forms a larger component of the total time that is elapsed, we may expect a visible scaling in some of the given configurations
 
 ### Box Plots
-
-![Comparison of Scaling Up](plot.jpg)
+* **Time Consumed vs PPN** <br>
+![Time vs PPN](plot_1.jpg)
+* **Speed Up** <br>
+![Speed Up](plot_2.jpg
 
 

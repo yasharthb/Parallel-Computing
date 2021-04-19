@@ -23,8 +23,9 @@ with open('data.csv', 'r') as csvfile:
       else:
         opt2[int(np.log2(int(row[1])))].append(float(row[2]))
 
+# Time vs PPN plot
 colors  = ['r','m']
-name = "plot.jpg"
+name = "plot_1.jpg"
 
 plt.figure()
 plt.plot(range(1,len(N)+1), np.array([np.median(times) for times in opt1]),color = colors[0], label=part[0])
@@ -38,3 +39,27 @@ plt.xlabel('Processes per Node(PPN)')
 plt.title("Time Consumed vs PPN: Scaling Up Comparison")
 plt.ylabel('Time taken (in seconds)')
 plt.savefig(name)
+plt.close()
+
+## Speed Up Plot
+name2= "plot_2.jpg"
+
+Ts_1 = np.median(opt1[0])
+Ts_2 = np.median(opt2[0])
+
+su_1 =[[Ts_1/time  for time in times] for times in opt1]
+su_2 =[[Ts_2/time  for time in times] for times in opt2]
+
+plt.figure()
+plt.plot(range(1,len(N)+1), np.array([np.median(times) for times in su_1]),color = colors[0], label=part[0])
+plt.boxplot(su_1, labels = N, medianprops = {'color':colors[0]}, boxprops = dict(color=colors[0]))
+
+plt.plot(range(1,len(N)+1), np.array([np.median(times) for times in su_2]),color = colors[1], label=part[1])
+plt.boxplot(su_2, labels = N, medianprops = {'color':colors[1]}, boxprops = dict(color=colors[1]))
+
+plt.legend()
+plt.xlabel('Processes per Node(PPN)')
+plt.title("Speed Up Comparison")
+plt.ylabel('Speed Up')
+plt.savefig(name2)
+plt.close()
