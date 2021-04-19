@@ -72,10 +72,14 @@ Earlier we considered distributing data in a column major manner. However, later
 Thus, we then changed to the approach earlier mentioned (row major) as it ensured that the computational work was always fairly distributed, putting no undue pressure on a few nodes.
 
 ## Observations
+In the below discussion as well the generated plots we use P to denote the number of nodes, and PPN to denote the processes per node. Hence, P*PPN gives us the total number of processes.
 
-Any Scaling Up is not evident from the Box plot. We observe that the configuration (P=1,PPN=1) performs the best with a execution time in order of 0.3 seconds. Considering the practically no time here is spent in communication, we may deduce that the computation is of the same order. The rest of the configurations showcase an execution time of ~5 seconds which can be majorly attribute to the time spent in communication between these processes.
+1. We observe that the time taken for exceution when the processes are present on the same node (P=1) is lower than when the same number of processes are distributed over two nodes (P=2). For example, when the total number of processes is 2, the time taken for the configuration P=2, PPN=1 is almost 6x the time taken for the configuration P=1, PPN=2. This is because the inter-node communication cost is much significantly higher than intra-node communication cost due to larger distance (more number of hops) as well as contention on the network switches. The same trend is observed when the number of processes is 4, and the time taken for the configuration P=2, PPN=2 is around 7x the time taken for the configuration P=1, PPN=4.
 
-The conclusion being that with computation size as needed in the file provided, any scaling up if possible is outshadowed by the communication overheads. When the computation forms a larger component of the total time that is elapsed, we may expect a visible scaling in some of the given configurations
+2. We observe scaling up with increase in number of processes when P=1, that is all the processes are present on the same node. We observe a speedup of 1.3x and 1.6x for P=1, PPN=2 (processes=2) and P=1, PPN=4(processes=4), respectively on comparing with P=1, PPN=1 (processes=1). This shows the advantage of distributing the data and parallelizing the computations. The time taken for all values of PPN when P=2 is higher than for a single process, and we do not observe any scaling when compared with P=1, PPN=1. This maybe because the inter-node communication cost overshadows any time reduction obtained from parallelizing the computation for the current file size. We may observe a speedup as the computation size increases. 
+
+We observe a small decrease in time taken when the PPN value is increased from 1 to 4, keeping P=2. This maybe because communication overhead for these configurations may be similar for all since P=2, and the advantage of distributing the computations and the data becomes visible.
+
 
 ### Box Plots
 * **Time Consumed vs PPN** <br>
