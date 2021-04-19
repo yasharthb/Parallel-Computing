@@ -58,7 +58,7 @@ plt.boxplot(su_1, labels = N, medianprops = {'color':colors[0]}, boxprops = dict
 plt.plot(range(1,len(N)+1), np.array([np.median(times) for times in su_2]),color = colors[1], label="P=2 wrt base: P=2,PPN=1")
 plt.boxplot(su_2, labels = N, medianprops = {'color':colors[1]}, boxprops = dict(color=colors[1]))
 
-plt.plot(range(1,len(N)+1), np.array([np.median(times) for times in su_3]),color = colors[1], label="P=2 wrt base: P=1,PPN=1")
+plt.plot(range(1,len(N)+1), np.array([np.median(times) for times in su_3]),color = 'g', label="P=2 wrt base: P=1,PPN=1")
 plt.boxplot(su_3, labels = N, medianprops = {'color':'g'}, boxprops = dict(color='g'))
 
 
