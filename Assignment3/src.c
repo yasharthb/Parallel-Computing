@@ -84,6 +84,7 @@ int main( int argc, char *argv[])
         }*/
     }
 
+    MPI_Barrier(MPI_COMM_WORLD);
     double stime = MPI_Wtime();
     
     // Broadcast nrow and ncol information
