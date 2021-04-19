@@ -11,9 +11,9 @@ no_of_groups = int(sys.argv[1])
 nodes_per_group = int(sys.argv[2])
 cores = int(sys.argv[3])
 
-lines = ["csews2,csews3,csews4,csews5,csews6,csews7,csews8,csews9,csews10,csews11,csews12,csews14,csews15,csews16,csews31",
-        "csews13,csews17,csews18,csews19,csews20,csews21,csews22,csews23,csews24,csews25,csews26,csews27,csews28,csews29,csews30,csews32",
-        "csews33,csews34,csews35,csews36,csews37,csews38,csews39,csews40,csews41,csews42,csews43,csews44,csews46"]
+lines = ["csews13,csews17,csews18,csews19,csews20,csews21,csews22,csews23,csews24,csews25,csews26,csews27,csews28,csews29,csews30,csews32",
+        "csews2,csews3,csews4,csews5,csews6,csews7,csews8,csews9,csews10,csews11,csews12,csews14,csews15,csews16,csews31",
+        "csews33,csews34,csews35,csews36,csews37,csews38,csews39,csews40,csews41,csews42,csews43,csews44,csews46",]
 
 
 total_groups = len(lines)
